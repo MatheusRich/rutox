@@ -32,7 +32,7 @@ impl Scanner {
         }
 
         self.tokens.push(Token {
-            kind: TokenKind::EOF,
+            kind: TokenKind::Eof,
             lexeme: "".to_string(),
             location: SrcLocation {
                 line: self.current_line,

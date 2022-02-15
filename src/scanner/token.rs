@@ -62,7 +62,7 @@ pub enum TokenKind {
     Var,
     While,
 
-    EOF,
+    Eof,
 }
 
 impl fmt::Display for TokenKind {
