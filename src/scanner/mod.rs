@@ -88,6 +88,8 @@ impl Scanner {
                 self.current_line += 1;
                 self.current_column = 0;
             }
+            c if c.is_digit(10) => self.consume_number()?,
+            c if c.is_ascii_alphabetic() || c == '_' => self.consume_identifier(),
             c => {
                 return Err(RutoxError::SyntaxError(
                     format!("Unexpected character: `{c}`"),
@@ -150,6 +152,14 @@ impl Scanner {
         Ok(())
     }
 
+    fn consume_identifier(&mut self) {
+        self.consume_while(|c| c.is_ascii_alphanumeric() || c == '_');
+
+        let text = self.current_token_string();
+        let kind = self.keyword_to_token_kind(&text).unwrap_or(TokenKind::Identifier(text));
+        self.add_token(kind);
+    }
+
     fn skip_comment(&mut self) {
         self.consume_while(|c| c != '\n');
     }
@@ -201,7 +211,7 @@ impl Scanner {
         if let Some(c) = self.peek() {
             if f(c) {
                 self.advance();
-                return true;
+                true
             } else {
                 false
             }
@@ -232,7 +242,7 @@ impl Scanner {
     }
 
     fn add_token(&mut self, kind: TokenKind) {
-        let text = self.source[self.start..self.current].to_string();
+        let text = self.current_token_string();
 
         self.tokens.push(Token {
             kind,
@@ -248,10 +258,36 @@ impl Scanner {
         self.current >= self.source.len()
     }
 
+    fn current_token_string(&self) -> String {
+        self.source[self.start..self.current].to_string()
+    }
+
     fn current_location(&self) -> SrcLocation {
         SrcLocation {
             line: self.current_line,
             col: self.current_column,
+        }
+    }
+
+    fn keyword_to_token_kind(&self, kw: &str) -> Option<TokenKind> {
+        match kw {
+            "and" => Some(TokenKind::And),
+            "class" => Some(TokenKind::Class),
+            "else" => Some(TokenKind::Else),
+            "false" => Some(TokenKind::False),
+            "for" => Some(TokenKind::For),
+            "fun" => Some(TokenKind::Fun),
+            "if" => Some(TokenKind::If),
+            "nil" => Some(TokenKind::Nil),
+            "or" => Some(TokenKind::Or),
+            "print" => Some(TokenKind::Print),
+            "return" => Some(TokenKind::Return),
+            "super" => Some(TokenKind::Super),
+            "this" => Some(TokenKind::This),
+            "true" => Some(TokenKind::True),
+            "var" => Some(TokenKind::Var),
+            "while" => Some(TokenKind::While),
+            _ => None,
         }
     }
 }

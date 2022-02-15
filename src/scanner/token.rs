@@ -1,5 +1,5 @@
-use std::fmt;
 use super::src_location::SrcLocation;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct Token {
@@ -40,7 +40,7 @@ pub enum TokenKind {
     LessEqual,
 
     // Literals.
-    Identifier,
+    Identifier(String),
     String(String),
     Number(f64),
 
