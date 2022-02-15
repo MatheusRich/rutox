@@ -44,9 +44,7 @@ impl Scanner {
     }
 
     fn scan_token(&mut self) -> Result<(), RutoxError> {
-        let c = self.advance();
-
-        match c {
+        match self.advance() {
             '(' => self.add_token(TokenKind::LParen),
             ')' => self.add_token(TokenKind::RParen),
             '{' => self.add_token(TokenKind::LBrace),
@@ -90,13 +88,35 @@ impl Scanner {
                 self.current_line += 1;
                 self.current_column = 0;
             }
-            _ => {
+            c => {
                 return Err(RutoxError::SyntaxError(
                     format!("Unexpected character: `{c}`"),
                     self.current_location(),
                 ))
             }
         }
+
+        Ok(())
+    }
+
+    fn consume_number(&mut self) -> Result<(), RutoxError> {
+        self.consume_while(|c| c.is_digit(10));
+
+        if let (Some('.'), Some(next)) = (self.peek(), self.peek_next()) {
+            if next.is_digit(10) {
+                self.advance();
+                self.consume_while(|c| c.is_digit(10));
+            }
+        }
+
+        let n_string = &self.source[self.start..self.current];
+        let n = n_string.parse::<f64>().map_err(|_| {
+            RutoxError::ProgrammerError(
+                format!("Could not parse number `{n_string}`"),
+                self.current_location(),
+            )
+        })?;
+        self.add_token(TokenKind::Number(n));
 
         Ok(())
     }
@@ -192,6 +212,10 @@ impl Scanner {
 
     fn peek(&self) -> Option<char> {
         self.source.chars().nth(self.current)
+    }
+
+    fn peek_next(&self) -> Option<char> {
+        self.source.chars().nth(self.current + 1)
     }
 
     fn expect(&mut self, expected: char) -> Result<char, RutoxError> {

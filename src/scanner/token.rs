@@ -42,7 +42,7 @@ pub enum TokenKind {
     // Literals.
     Identifier,
     String(String),
-    Number,
+    Number(f64),
 
     // Keywords.
     And,
