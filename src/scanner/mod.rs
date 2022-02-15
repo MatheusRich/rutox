@@ -1,8 +1,8 @@
-mod token;
 pub mod src_location;
+mod token;
 use super::rutox_error::RutoxError;
-use token::{Token, TokenKind};
 use src_location::SrcLocation;
+use token::{Token, TokenKind};
 
 pub struct Scanner {
     source: String,
@@ -21,7 +21,7 @@ impl Scanner {
             start: 0,
             current: 0,
             current_line: 1,
-            current_column: 1,
+            current_column: 0,
         }
     }
 
@@ -58,10 +58,51 @@ impl Scanner {
             '+' => self.add_token(TokenKind::Plus, None),
             ';' => self.add_token(TokenKind::Semicolon, None),
             '*' => self.add_token(TokenKind::Star, None),
-            _ => return Err(RutoxError::SyntaxError(format!("Unexpected character: `{c}`"), self.current_location())),
+            '!' => {
+                let kind = self.either('=', TokenKind::BangEqual, TokenKind::Bang);
+
+                self.add_token(kind, None)
+            }
+            '=' => {
+                let kind = self.either('=', TokenKind::EqualEqual, TokenKind::Equal);
+
+                self.add_token(kind, None)
+            }
+            '<' => {
+                let kind = self.either('=', TokenKind::LessEqual, TokenKind::Less);
+
+                self.add_token(kind, None)
+            }
+            '>' => {
+                let kind = self.either('=', TokenKind::GreaterEqual, TokenKind::Greater);
+
+                self.add_token(kind, None)
+            }
+            '/' => {
+                if self.matches('/') {
+                    self.skip_comment();
+                } else {
+                    self.add_token(TokenKind::Slash, None);
+                }
+            }
+            ' ' | '\t' | '\r' => (),
+            '\n' => {
+                self.current_line += 1;
+                self.current_column = 0;
+            },
+            _ => {
+                return Err(RutoxError::SyntaxError(
+                    format!("Unexpected character: `{c}`"),
+                    self.current_location(),
+                ))
+            }
         }
 
         Ok(())
+    }
+
+    fn skip_comment(&mut self) {
+        self.consume_while(|c| c != '\n');
     }
 
     fn advance(&mut self) -> char {
@@ -72,6 +113,56 @@ impl Scanner {
             .chars()
             .nth(self.current - 1)
             .expect("Called advance, but scanner is at end of source")
+    }
+
+    fn matches(&mut self, expected: char) -> bool {
+        self.consume_if(|c| c == expected)
+    }
+
+    fn either(&mut self, expected: char, matched: TokenKind, unmatched: TokenKind) -> TokenKind {
+        if self.matches(expected) {
+            matched
+        } else {
+            unmatched
+        }
+    }
+
+    fn consume_while<F>(&mut self, f: F) -> Vec<char>
+    where
+        F: Fn(char) -> bool,
+    {
+        let mut chars: Vec<char> = Vec::new();
+
+        while let Some(ch) = self.peek() {
+            if f(ch) {
+                self.advance();
+                chars.push(ch)
+            } else {
+                break;
+            }
+        }
+
+        chars
+    }
+
+    fn consume_if<F>(&mut self, f: F) -> bool
+    where
+        F: Fn(char) -> bool,
+    {
+        if let Some(c) = self.peek() {
+            if f(c) {
+                self.advance();
+                return true;
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.source.chars().nth(self.current)
     }
 
     fn add_token(&mut self, kind: TokenKind, literal: Option<String>) {
