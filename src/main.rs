@@ -58,7 +58,13 @@ fn run_repl() {
 fn run(source: String) {
     match Scanner::new(source).scan_tokens() {
         Ok(tokens) => {
-            println!("{:?}", tokens);
+            let str: String = tokens
+                .iter()
+                .map(|token| format!("{}", token))
+                .collect::<Vec<String>>()
+                .join(", ");
+
+                println!("{}", str);
         }
         Err(err) => {
             println!("Scanning error: {}", err);

@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenKind,
@@ -6,7 +8,12 @@ pub struct Token {
     pub location: SrcLocation,
 }
 
-impl Token {}
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // write!(f, "<{} \"{}\" {}>", self.kind, self.lexeme, self.location)
+        write!(f, "<{} at {}>", self.kind, self.location)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum TokenKind {
@@ -58,8 +65,21 @@ pub enum TokenKind {
 
     EOF,
 }
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SrcLocation {
     pub line: usize,
     pub col: usize,
+}
+
+impl fmt::Display for SrcLocation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.line, self.col)
+    }
 }
