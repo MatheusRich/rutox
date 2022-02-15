@@ -26,7 +26,7 @@ impl Scanner {
     pub fn scan_tokens(&mut self) -> Result<Vec<Token>, RutoxError> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?
         }
 
         self.tokens.push(Token {
@@ -42,7 +42,7 @@ impl Scanner {
         Ok(self.tokens.clone())
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), RutoxError> {
         let c = self.advance();
 
         match c {
@@ -56,8 +56,10 @@ impl Scanner {
             '+' => self.add_token(TokenKind::Plus, None),
             ';' => self.add_token(TokenKind::Semicolon, None),
             '*' => self.add_token(TokenKind::Star, None),
-            _ => return,
+            _ => return Err(RutoxError::SyntaxError(format!("Unexpected character: {}", c))),
         }
+
+        Ok(())
     }
 
     fn advance(&mut self) -> char {

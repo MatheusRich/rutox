@@ -67,7 +67,7 @@ fn run(source: String) {
                 println!("{}", str);
         }
         Err(err) => {
-            println!("Scanning error: {}", err);
+            println!("{err}");
         }
     }
 }
