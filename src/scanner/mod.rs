@@ -34,7 +34,6 @@ impl Scanner {
         self.tokens.push(Token {
             kind: TokenKind::EOF,
             lexeme: "".to_string(),
-            literal: None,
             location: SrcLocation {
                 line: self.current_line,
                 col: self.current_column,
@@ -48,48 +47,49 @@ impl Scanner {
         let c = self.advance();
 
         match c {
-            '(' => self.add_token(TokenKind::LParen, None),
-            ')' => self.add_token(TokenKind::RParen, None),
-            '{' => self.add_token(TokenKind::LBrace, None),
-            '}' => self.add_token(TokenKind::RBrace, None),
-            ',' => self.add_token(TokenKind::Comma, None),
-            '.' => self.add_token(TokenKind::Dot, None),
-            '-' => self.add_token(TokenKind::Minus, None),
-            '+' => self.add_token(TokenKind::Plus, None),
-            ';' => self.add_token(TokenKind::Semicolon, None),
-            '*' => self.add_token(TokenKind::Star, None),
+            '(' => self.add_token(TokenKind::LParen),
+            ')' => self.add_token(TokenKind::RParen),
+            '{' => self.add_token(TokenKind::LBrace),
+            '}' => self.add_token(TokenKind::RBrace),
+            ',' => self.add_token(TokenKind::Comma),
+            '.' => self.add_token(TokenKind::Dot),
+            '-' => self.add_token(TokenKind::Minus),
+            '+' => self.add_token(TokenKind::Plus),
+            ';' => self.add_token(TokenKind::Semicolon),
+            '*' => self.add_token(TokenKind::Star),
             '!' => {
                 let kind = self.either('=', TokenKind::BangEqual, TokenKind::Bang);
 
-                self.add_token(kind, None)
+                self.add_token(kind)
             }
             '=' => {
                 let kind = self.either('=', TokenKind::EqualEqual, TokenKind::Equal);
 
-                self.add_token(kind, None)
+                self.add_token(kind)
             }
             '<' => {
                 let kind = self.either('=', TokenKind::LessEqual, TokenKind::Less);
 
-                self.add_token(kind, None)
+                self.add_token(kind)
             }
             '>' => {
                 let kind = self.either('=', TokenKind::GreaterEqual, TokenKind::Greater);
 
-                self.add_token(kind, None)
+                self.add_token(kind)
             }
             '/' => {
                 if self.matches('/') {
                     self.skip_comment();
                 } else {
-                    self.add_token(TokenKind::Slash, None);
+                    self.add_token(TokenKind::Slash);
                 }
             }
+            '"' => self.consume_string()?,
             ' ' | '\t' | '\r' => (),
             '\n' => {
                 self.current_line += 1;
                 self.current_column = 0;
-            },
+            }
             _ => {
                 return Err(RutoxError::SyntaxError(
                     format!("Unexpected character: `{c}`"),
@@ -97,6 +97,35 @@ impl Scanner {
                 ))
             }
         }
+
+        Ok(())
+    }
+
+    fn consume_string(&mut self) -> Result<(), RutoxError> {
+        while let Some(ch) = self.peek() {
+            if ch == '"' {
+                break;
+            }
+            if ch == '\n' {
+                self.current_line += 1;
+                self.current_column = 0;
+            }
+
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            return Err(RutoxError::SyntaxError(
+                "Unterminated string".into(),
+                self.current_location(),
+            ));
+        }
+
+        self.expect('"')?;
+
+        // Trim the surrounding quotes
+        let value = self.source[self.start + 1..self.current - 1].to_string();
+        self.add_token(TokenKind::String(value));
 
         Ok(())
     }
@@ -165,12 +194,24 @@ impl Scanner {
         self.source.chars().nth(self.current)
     }
 
-    fn add_token(&mut self, kind: TokenKind, literal: Option<String>) {
+    fn expect(&mut self, expected: char) -> Result<char, RutoxError> {
+        let current = self.advance();
+
+        if current == expected {
+            Ok(current)
+        } else {
+            Err(RutoxError::ProgrammerError(
+                format!("Expected `{expected}`, found `{current}`"),
+                self.current_location(),
+            ))
+        }
+    }
+
+    fn add_token(&mut self, kind: TokenKind) {
         let text = self.source[self.start..self.current].to_string();
 
         self.tokens.push(Token {
             kind,
-            literal,
             lexeme: text,
             location: SrcLocation {
                 line: self.current_line,
