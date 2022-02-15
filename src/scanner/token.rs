@@ -5,13 +5,11 @@ use super::src_location::SrcLocation;
 pub struct Token {
     pub kind: TokenKind,
     pub lexeme: String,
-    pub literal: Option<String>, // this is probably wrong
     pub location: SrcLocation,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // write!(f, "<{} \"{}\" {}>", self.kind, self.lexeme, self.location)
         write!(f, "<{} at {}>", self.kind, self.location)
     }
 }
@@ -43,7 +41,7 @@ pub enum TokenKind {
 
     // Literals.
     Identifier,
-    String,
+    String(String),
     Number,
 
     // Keywords.
