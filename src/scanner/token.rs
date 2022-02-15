@@ -1,4 +1,5 @@
 use std::fmt;
+use super::src_location::SrcLocation;
 
 #[derive(Debug, Clone)]
 pub struct Token {
@@ -69,17 +70,5 @@ pub enum TokenKind {
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct SrcLocation {
-    pub line: usize,
-    pub col: usize,
-}
-
-impl fmt::Display for SrcLocation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.line, self.col)
     }
 }

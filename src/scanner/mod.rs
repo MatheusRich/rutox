@@ -1,6 +1,8 @@
 mod token;
+pub mod src_location;
 use super::rutox_error::RutoxError;
-use token::{SrcLocation, Token, TokenKind};
+use token::{Token, TokenKind};
+use src_location::SrcLocation;
 
 pub struct Scanner {
     source: String,
@@ -56,7 +58,7 @@ impl Scanner {
             '+' => self.add_token(TokenKind::Plus, None),
             ';' => self.add_token(TokenKind::Semicolon, None),
             '*' => self.add_token(TokenKind::Star, None),
-            _ => return Err(RutoxError::SyntaxError(format!("Unexpected character: {}", c))),
+            _ => return Err(RutoxError::SyntaxError(format!("Unexpected character: `{c}`"), self.current_location())),
         }
 
         Ok(())
@@ -88,5 +90,12 @@ impl Scanner {
 
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+
+    fn current_location(&self) -> SrcLocation {
+        SrcLocation {
+            line: self.current_line,
+            col: self.current_column,
+        }
     }
 }
