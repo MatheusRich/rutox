@@ -1,8 +1,10 @@
 use std::{env, fs, process};
 mod exitcodes;
+mod parser;
 mod rutox_error;
 mod scanner;
 use scanner::Scanner;
+use parser::Parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -23,7 +25,13 @@ fn run_file(path: &str) {
         process::exit(exitcodes::IOERR);
     });
 
-    run(file_content);
+    match run(file_content) {
+        Ok(_) => {}
+        Err(err) => {
+            println!("Error: {}", err);
+            process::exit(exitcodes::DATAERR);
+        }
+    }
 }
 
 fn run_repl() {
@@ -55,7 +63,7 @@ fn run_repl() {
     }
 }
 
-fn run(source: String) {
+fn run(source: String) -> Result<(), rutox_error::RutoxError> {
     match Scanner::new(source).scan_tokens() {
         Ok(tokens) => {
             let str: String = tokens
@@ -64,10 +72,18 @@ fn run(source: String) {
                 .collect::<Vec<String>>()
                 .join(", ");
 
-                println!("{}", str);
+            println!("{}", str);
+            Ok(())
         }
         Err(err) => {
             println!("{err}");
+            Err(err)
         }
     }
+}
+
+fn run2(source: String) -> Result<(), rutox_error::RutoxError> {
+    Scanner::new(source)
+        .scan_tokens()
+        .and_then(|tokens| Parser::new(tokens).parse_exprs())
 }

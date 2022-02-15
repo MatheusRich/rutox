@@ -1,7 +1,7 @@
 use super::src_location::SrcLocation;
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Token {
     pub kind: TokenKind,
     pub lexeme: String,
@@ -9,6 +9,15 @@ pub struct Token {
 }
 
 impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.kind {
+            TokenKind::Eof => write!(f, "EOF"),
+            _ => write!(f, "{}", self.lexeme),
+        }
+    }
+}
+
+impl fmt::Debug for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<{} at {}>", self.kind, self.location)
     }
@@ -86,7 +95,7 @@ impl fmt::Display for TokenKind {
             | TokenKind::True
             | TokenKind::Var
             | TokenKind::While => {
-                let str = format!("{:?}", self).purple();
+                let str = format!("{:?}", self).to_lowercase().purple();
                 write!(f, "{str}")
             }
 

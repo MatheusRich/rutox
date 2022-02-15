@@ -1,7 +1,7 @@
 pub mod src_location;
-mod token;
+pub mod token;
 use super::rutox_error::RutoxError;
-use src_location::SrcLocation;
+pub use src_location::SrcLocation;
 use token::{Token, TokenKind};
 
 pub struct Scanner {
