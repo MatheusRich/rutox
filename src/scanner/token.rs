@@ -67,6 +67,39 @@ pub enum TokenKind {
 
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        use colored::*;
+
+        match self {
+            TokenKind::And
+            | TokenKind::Class
+            | TokenKind::Else
+            | TokenKind::False
+            | TokenKind::For
+            | TokenKind::Fun
+            | TokenKind::If
+            | TokenKind::Nil
+            | TokenKind::Or
+            | TokenKind::Print
+            | TokenKind::Return
+            | TokenKind::Super
+            | TokenKind::This
+            | TokenKind::True
+            | TokenKind::Var
+            | TokenKind::While => {
+                let str = format!("{:?}", self).purple();
+                write!(f, "{str}")
+            }
+
+            TokenKind::Number(n) => {
+                let str = "Number".blue();
+                write!(f, "{str}({n})")
+            }
+            TokenKind::String(s) => {
+                let str = "String".green();
+                write!(f, "{str}({s})")
+            }
+
+            _ => write!(f, "{:?}", self),
+        }
     }
 }
