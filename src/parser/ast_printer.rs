@@ -35,7 +35,7 @@ impl ExprVisitor<String> for AstPrinter {
     fn visit_grouping_expr(&self, expr: &Expr) -> String {
         format!(
             "(group {} )",
-            self.visit_expr(&expr)
+            self.visit_expr(expr)
         )
     }
 }
