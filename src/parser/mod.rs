@@ -138,6 +138,28 @@ impl Parser {
         }
     }
 
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().kind == TokenKind::Semicolon {
+                return;
+            }
+
+            match self.peek().unwrap().kind {
+                TokenKind::Class
+                | TokenKind::Fun
+                | TokenKind::Var
+                | TokenKind::For
+                | TokenKind::If
+                | TokenKind::While
+                | TokenKind::Print
+                | TokenKind::Return => return,
+                _ => self.advance(),
+            };
+        }
+    }
+
     // helpers
 
     fn match_any(&mut self, kinds: &[TokenKind]) -> bool {
