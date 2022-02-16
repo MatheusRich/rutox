@@ -1,6 +1,7 @@
 use super::visitor::ExprVisitor;
-use crate::scanner::token::Token;
+use crate::scanner::{token::Token, SrcLocation};
 
+#[derive(Debug)]
 pub enum Expr {
     Binary(BinaryData),
     Grouping(Box<Expr>),
@@ -8,16 +9,21 @@ pub enum Expr {
     Literal(LiteralData),
 }
 
+#[derive(Debug)]
 pub enum LiteralData {
-    String(String),
-    Number(f64),
+    String(String, SrcLocation),
+    Number(f64, SrcLocation),
+    Bool(bool, SrcLocation),
+    Nil(SrcLocation),
 }
 
+#[derive(Debug)]
 pub struct UnaryData {
     pub operator: Token,
     pub expr: Box<Expr>,
 }
 
+#[derive(Debug)]
 pub struct BinaryData {
     pub operator: Token,
     pub left: Box<Expr>,

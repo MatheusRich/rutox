@@ -12,8 +12,10 @@ impl AstPrinter {
 impl ExprVisitor<String> for AstPrinter {
     fn visit_literal_expr(&self, literal: &LiteralData) -> String {
         match literal {
-            LiteralData::String(s) => format!("\"{s}\""),
-            LiteralData::Number(n) => format!("{n}"),
+            LiteralData::String(s, _) => format!("\"{s}\""),
+            LiteralData::Number(n, _) => format!("{n}"),
+            LiteralData::Bool(b, _) => format!("{}", b),
+            LiteralData::Nil(_) => "nil".to_string(),
         }
     }
 

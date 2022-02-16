@@ -3,8 +3,8 @@ mod exitcodes;
 mod parser;
 mod rutox_error;
 mod scanner;
+use parser::{Parser, ast::Expr};
 use scanner::Scanner;
-use parser::Parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -48,7 +48,11 @@ fn run_repl() {
                 "quit" | "exit" => break,
                 _ => {
                     rl.add_history_entry(line.as_str());
-                    run(line);
+
+                    match run2(line) {
+                        Ok(expr) => println!("{:?}", expr),
+                        Err(error) => println!("{error}"),
+                    }
                 }
             },
             Err(ReadlineError::Interrupted) => println!("^C"),
@@ -82,8 +86,8 @@ fn run(source: String) -> Result<(), rutox_error::RutoxError> {
     }
 }
 
-fn run2(source: String) -> Result<(), rutox_error::RutoxError> {
+fn run2(source: String) -> Result<Expr, rutox_error::RutoxError> {
     Scanner::new(source)
         .scan_tokens()
-        .and_then(|tokens| Parser::new(tokens).parse_exprs())
+        .and_then(|tokens| Parser::new(tokens).parse())
 }

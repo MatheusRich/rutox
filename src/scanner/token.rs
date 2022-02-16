@@ -23,7 +23,7 @@ impl fmt::Debug for Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     // Single-character tokens.
     LParen,
