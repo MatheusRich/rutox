@@ -31,4 +31,11 @@ impl ExprVisitor<String> for AstPrinter {
             self.visit_expr(&binary.right)
         )
     }
+
+    fn visit_grouping_expr(&self, expr: &Expr) -> String {
+        format!(
+            "(group {} )",
+            self.visit_expr(&expr)
+        )
+    }
 }

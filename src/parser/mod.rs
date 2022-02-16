@@ -2,7 +2,10 @@ pub mod ast;
 pub mod ast_printer;
 pub mod visitor;
 use crate::rutox_error::RutoxError;
-use crate::scanner::token::{Token, TokenKind};
+use crate::scanner::{
+    token::{Token, TokenKind},
+    SrcLocation,
+};
 use ast::{BinaryData, Expr, LiteralData, UnaryData};
 
 pub struct Parser {
@@ -122,6 +125,12 @@ impl Parser {
                 token.location.clone(),
             ))),
             TokenKind::Nil => Ok(Expr::Literal(LiteralData::Nil(token.location.clone()))),
+            &TokenKind::LParen => {
+                let expr = self.expression()?;
+                self.expect(TokenKind::RParen, "Expect `)` after expression")?;
+
+                Ok(Expr::Grouping(Box::new(expr)))
+            }
             _ => Err(RutoxError::SyntaxError(
                 format!("Expect expression, got `{}`", token),
                 token.location.clone(),
@@ -179,5 +188,23 @@ impl Parser {
         }
 
         self.previous()
+    }
+
+    fn expect(&mut self, kind: TokenKind, message: &str) -> Result<Token, RutoxError> {
+        if self.check(&kind) {
+            Ok(self.advance())
+        } else {
+            Err(RutoxError::SyntaxError(
+                message.to_string(),
+                self.current_location(),
+            ))
+        }
+    }
+
+    fn current_location(&self) -> SrcLocation {
+        match self.peek() {
+            Some(token) => token.location.clone(),
+            None => self.previous().location,
+        }
     }
 }
