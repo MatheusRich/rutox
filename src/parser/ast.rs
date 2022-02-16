@@ -8,7 +8,7 @@ pub enum Expr {
     Literal(LiteralData),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LiteralData {
     String(String, SrcLocation),
     Number(f64, SrcLocation),
@@ -18,7 +18,7 @@ pub enum LiteralData {
 
 #[derive(Debug)]
 pub struct UnaryData {
-    pub operator: Token,
+    pub operator: Token, // restrict further
     pub expr: Box<Expr>,
     pub location: SrcLocation,
 }

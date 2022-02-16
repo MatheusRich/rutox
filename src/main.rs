@@ -1,9 +1,11 @@
 use std::{env, fs, process};
 mod exitcodes;
+mod interpreter;
 mod parser;
 mod rutox_error;
 mod scanner;
-use parser::{ast::Expr, ast_printer::AstPrinter, Parser};
+use interpreter::{Interpreter, LoxObj};
+use parser::Parser;
 use scanner::Scanner;
 
 fn main() {
@@ -26,7 +28,7 @@ fn run_file(path: &str) {
     });
 
     match run(file_content) {
-        Ok(expr) => AstPrinter::print(&expr),
+        Ok(result) => println!("{:?}", result),
         Err(err) => {
             println!("{err}");
             process::exit(exitcodes::DATAERR);
@@ -50,7 +52,7 @@ fn run_repl() {
                     rl.add_history_entry(line.as_str());
 
                     match run(line) {
-                        Ok(expr) => AstPrinter::print(&expr),
+                        Ok(result) => println!("{:?}", result),
                         Err(error) => println!("{error}"),
                     }
                 }
@@ -67,8 +69,9 @@ fn run_repl() {
     }
 }
 
-fn run(source: String) -> Result<Expr, rutox_error::RutoxError> {
+fn run(source: String) -> Result<LoxObj, rutox_error::RutoxError> {
     Scanner::new(source)
         .scan_tokens()
         .and_then(|tokens| Parser::new(tokens).parse())
+        .and_then(|expr| Interpreter::new().interpret(&expr))
 }

@@ -1,7 +1,9 @@
 use super::ast::*;
+use crate::rutox_error::RutoxError;
+
 
 pub trait ExprVisitor<T> {
-    fn visit_expr(&self, expr: &Expr) -> T {
+    fn visit_expr(&self, expr: &Expr) -> Result<T, RutoxError> {
         match expr {
             Expr::Literal(literal) => self.visit_literal_expr(literal),
             Expr::Unary(args) => self.visit_unary_expr(args),
@@ -10,8 +12,8 @@ pub trait ExprVisitor<T> {
         }
     }
 
-    fn visit_literal_expr(&self, literal: &LiteralData) -> T;
-    fn visit_unary_expr(&self, unary: &UnaryData) -> T;
-    fn visit_binary_expr(&self, binary: &BinaryData) -> T;
-    fn visit_grouping_expr(&self, expr: &Expr) -> T;
+    fn visit_literal_expr(&self, literal: &LiteralData) -> Result<T, RutoxError>;
+    fn visit_unary_expr(&self, unary: &UnaryData) -> Result<T, RutoxError>;
+    fn visit_binary_expr(&self, binary: &BinaryData) -> Result<T, RutoxError>;
+    fn visit_grouping_expr(&self, expr: &Expr) -> Result<T, RutoxError>;
 }
