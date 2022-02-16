@@ -41,11 +41,11 @@ impl Parser {
     }
 
     fn comparison(&mut self) -> Result<Expr, RutoxError> {
-        let mut expr = self.primary()?;
+        let mut expr = self.term()?;
 
         while self.match_any(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
             let operator = self.previous();
-            let right = self.primary()?;
+            let right = self.term()?;
 
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
@@ -57,32 +57,75 @@ impl Parser {
         Ok(expr)
     }
 
+    fn term(&mut self) -> Result<Expr, RutoxError> {
+        let mut expr = self.factor()?;
+
+        while self.match_any(&[TokenKind::Minus, TokenKind::Plus]) {
+            let operator = self.previous();
+            let right = self.factor()?;
+
+            expr = Expr::Binary(BinaryData {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+
+        Ok(expr)
+    }
+
+    fn factor(&mut self) -> Result<Expr, RutoxError> {
+        let mut expr = self.unary()?;
+
+        while self.match_any(&[TokenKind::Slash, TokenKind::Star]) {
+            let operator = self.previous();
+            let right = self.unary()?;
+
+            expr = Expr::Binary(BinaryData {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+
+        Ok(expr)
+    }
+
+    fn unary(&mut self) -> Result<Expr, RutoxError> {
+        if self.match_any(&[TokenKind::Bang, TokenKind::Minus]) {
+            let operator = self.previous();
+            let expr = self.unary()?;
+
+            return Ok(Expr::Unary(UnaryData {
+                expr: Box::new(expr),
+                operator,
+            }));
+        }
+
+        self.primary()
+    }
+
     fn primary(&mut self) -> Result<Expr, RutoxError> {
-        if let Some(token) = self.peek() {
-            match &token.kind {
-                TokenKind::True | TokenKind::False => Ok(Expr::Literal(LiteralData::Bool(
-                    token.kind == TokenKind::True,
-                    token.location.clone(),
-                ))),
-                TokenKind::Number(n) => Ok(Expr::Literal(LiteralData::Number(
-                    *n,
-                    token.location.clone(),
-                ))),
-                TokenKind::String(s) => Ok(Expr::Literal(LiteralData::String(
-                    s.clone(),
-                    token.location.clone(),
-                ))),
-                TokenKind::Nil => Ok(Expr::Literal(LiteralData::Nil(token.location.clone()))),
-                _ => Err(RutoxError::SyntaxError(
-                    format!("Unexpected token kind `{}`", token.kind),
-                    token.location.clone(),
-                )),
-            }
-        } else {
-            Err(RutoxError::SyntaxError(
-                "Unexpected end of input".to_string(),
-                self.previous().location,
-            ))
+        let token = self.try_advance()?;
+
+        match &token.kind {
+            TokenKind::True | TokenKind::False => Ok(Expr::Literal(LiteralData::Bool(
+                token.kind == TokenKind::True,
+                token.location.clone(),
+            ))),
+            TokenKind::Number(n) => Ok(Expr::Literal(LiteralData::Number(
+                *n,
+                token.location.clone(),
+            ))),
+            TokenKind::String(s) => Ok(Expr::Literal(LiteralData::String(
+                s.clone(),
+                token.location.clone(),
+            ))),
+            TokenKind::Nil => Ok(Expr::Literal(LiteralData::Nil(token.location.clone()))),
+            _ => Err(RutoxError::SyntaxError(
+                format!("Expect expression, got `{}`", token),
+                token.location.clone(),
+            )),
         }
     }
 
@@ -108,6 +151,18 @@ impl Parser {
 
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.current)
+    }
+
+    fn try_advance(&mut self) -> Result<Token, RutoxError> {
+        if self.is_at_end() {
+            Err(RutoxError::SyntaxError(
+                "Unexpected end of input".to_string(),
+                self.previous().location,
+            ))
+        } else {
+            self.advance();
+            Ok(self.previous())
+        }
     }
 
     fn previous(&self) -> Token {

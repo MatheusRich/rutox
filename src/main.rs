@@ -3,7 +3,7 @@ mod exitcodes;
 mod parser;
 mod rutox_error;
 mod scanner;
-use parser::{Parser, ast::Expr};
+use parser::{ast::Expr, ast_printer::AstPrinter, Parser};
 use scanner::Scanner;
 
 fn main() {
@@ -26,9 +26,9 @@ fn run_file(path: &str) {
     });
 
     match run(file_content) {
-        Ok(_) => {}
+        Ok(expr) => AstPrinter::print(&expr),
         Err(err) => {
-            println!("Error: {}", err);
+            println!("{err}");
             process::exit(exitcodes::DATAERR);
         }
     }
@@ -49,8 +49,8 @@ fn run_repl() {
                 _ => {
                     rl.add_history_entry(line.as_str());
 
-                    match run2(line) {
-                        Ok(expr) => println!("{:?}", expr),
+                    match run(line) {
+                        Ok(expr) => AstPrinter::print(&expr),
                         Err(error) => println!("{error}"),
                     }
                 }
@@ -67,26 +67,7 @@ fn run_repl() {
     }
 }
 
-fn run(source: String) -> Result<(), rutox_error::RutoxError> {
-    match Scanner::new(source).scan_tokens() {
-        Ok(tokens) => {
-            let str: String = tokens
-                .iter()
-                .map(|token| format!("{}", token))
-                .collect::<Vec<String>>()
-                .join(", ");
-
-            println!("{}", str);
-            Ok(())
-        }
-        Err(err) => {
-            println!("{err}");
-            Err(err)
-        }
-    }
-}
-
-fn run2(source: String) -> Result<Expr, rutox_error::RutoxError> {
+fn run(source: String) -> Result<Expr, rutox_error::RutoxError> {
     Scanner::new(source)
         .scan_tokens()
         .and_then(|tokens| Parser::new(tokens).parse())

@@ -1,4 +1,3 @@
-use super::visitor::ExprVisitor;
 use crate::scanner::{token::Token, SrcLocation};
 
 #[derive(Debug)]
