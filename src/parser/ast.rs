@@ -3,7 +3,7 @@ use crate::scanner::{token::Token, SrcLocation};
 #[derive(Debug)]
 pub enum Expr {
     Binary(BinaryData),
-    Grouping(Box<Expr>),
+    Grouping(Box<Expr>, SrcLocation),
     Unary(UnaryData),
     Literal(LiteralData),
 }
@@ -20,6 +20,7 @@ pub enum LiteralData {
 pub struct UnaryData {
     pub operator: Token,
     pub expr: Box<Expr>,
+    pub location: SrcLocation,
 }
 
 #[derive(Debug)]
@@ -27,4 +28,5 @@ pub struct BinaryData {
     pub operator: Token,
     pub left: Box<Expr>,
     pub right: Box<Expr>,
+    pub location: SrcLocation,
 }

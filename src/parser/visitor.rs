@@ -6,7 +6,7 @@ pub trait ExprVisitor<T> {
             Expr::Literal(literal) => self.visit_literal_expr(literal),
             Expr::Unary(args) => self.visit_unary_expr(args),
             Expr::Binary(args) => self.visit_binary_expr(args),
-            Expr::Grouping(grouped_expr) => self.visit_grouping_expr(grouped_expr),
+            Expr::Grouping(grouped_expr, _) => self.visit_grouping_expr(grouped_expr),
         }
     }
 

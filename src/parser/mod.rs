@@ -35,6 +35,7 @@ impl Parser {
 
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
+                location: operator.location.clone(),
                 operator,
                 right: Box::new(right),
             });
@@ -52,6 +53,7 @@ impl Parser {
 
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
+                location: operator.location.clone(),
                 operator,
                 right: Box::new(right),
             });
@@ -69,6 +71,7 @@ impl Parser {
 
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
+                location: operator.location.clone(),
                 operator,
                 right: Box::new(right),
             });
@@ -86,6 +89,7 @@ impl Parser {
 
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
+                location: operator.location.clone(),
                 operator,
                 right: Box::new(right),
             });
@@ -101,6 +105,7 @@ impl Parser {
 
             return Ok(Expr::Unary(UnaryData {
                 expr: Box::new(expr),
+                location: operator.location.clone(),
                 operator,
             }));
         }
@@ -129,7 +134,7 @@ impl Parser {
                 let expr = self.expression()?;
                 self.expect(TokenKind::RParen, "Expect `)` after expression")?;
 
-                Ok(Expr::Grouping(Box::new(expr)))
+                Ok(Expr::Grouping(Box::new(expr), token.location.clone()))
             }
             _ => Err(RutoxError::SyntaxError(
                 format!("Expect expression, got `{}`", token),
