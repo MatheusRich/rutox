@@ -1,7 +1,7 @@
 use crate::parser::ast::LiteralData;
 use crate::scanner::src_location::SrcLocation;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum LoxObj {
     String(String, SrcLocation),
     Number(f64, SrcLocation),
@@ -26,6 +26,17 @@ impl std::fmt::Display for LoxObj {
             LoxObj::String(s, _) => write!(f, "\"{s}\""),
             LoxObj::Number(n, _) => write!(f, "{n}"),
             LoxObj::Bool(bool, _) => write!(f, "{bool}"),
+            LoxObj::Nil(_) => write!(f, "nil"),
+        }
+    }
+}
+
+impl std::fmt::Debug for LoxObj {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            LoxObj::String(s, _) => write!(f, "string \"{s}\""),
+            LoxObj::Number(n, _) => write!(f, "number {n}"),
+            LoxObj::Bool(bool, _) => write!(f, "boolean {bool}"),
             LoxObj::Nil(_) => write!(f, "nil"),
         }
     }

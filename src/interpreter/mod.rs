@@ -64,7 +64,10 @@ impl ExprVisitor<LoxObj> for Interpreter {
                 let a = &self.visit_expr(&binary.left)?;
                 let b = &self.visit_expr(&binary.right)?;
                 let ordering = self.compare(a, b).ok_or_else(|| {
-                    RutoxError::Runtime(format!("Cannot compare `{a}`and `{b}`"), location.clone())
+                    RutoxError::Runtime(
+                        format!("Cannot compare {:?} and {:?}", a, b),
+                        location.clone(),
+                    )
                 })?;
 
                 match &binary.operator {
