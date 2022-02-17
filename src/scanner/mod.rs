@@ -34,10 +34,7 @@ impl Scanner {
         self.tokens.push(Token {
             kind: TokenKind::Eof,
             lexeme: "".to_string(),
-            location: SrcLocation {
-                line: self.current_line,
-                col: self.current_column,
-            },
+            location: SrcLocation::new(self.current_line, self.current_column),
         });
 
         Ok(self.tokens.clone())
@@ -156,7 +153,9 @@ impl Scanner {
         self.consume_while(|c| c.is_ascii_alphanumeric() || c == '_');
 
         let text = self.current_token_string();
-        let kind = self.keyword_to_token_kind(&text).unwrap_or(TokenKind::Identifier(text));
+        let kind = self
+            .keyword_to_token_kind(&text)
+            .unwrap_or(TokenKind::Identifier(text));
         self.add_token(kind);
     }
 
@@ -247,10 +246,7 @@ impl Scanner {
         self.tokens.push(Token {
             kind,
             lexeme: text,
-            location: SrcLocation {
-                line: self.current_line,
-                col: self.current_column,
-            },
+            location: self.current_location(),
         });
     }
 
@@ -263,10 +259,7 @@ impl Scanner {
     }
 
     fn current_location(&self) -> SrcLocation {
-        SrcLocation {
-            line: self.current_line,
-            col: self.current_column,
-        }
+        SrcLocation::new(self.current_line, self.current_column)
     }
 
     fn keyword_to_token_kind(&self, kw: &str) -> Option<TokenKind> {
