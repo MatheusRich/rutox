@@ -29,9 +29,13 @@ impl ExprVisitor<LoxObj> for Interpreter {
 
                 match value {
                     LoxObj::Number(number, _) => Ok(LoxObj::Number(-number, location.clone())),
-                    other => Err(RutoxError::Runtime(format!("Unary operator `-` can only be applied to numbers, but got {other}"), location.clone())),
+                    other => Err(RutoxError::Runtime(
+                        format!(
+                            "Unary operator `-` can only be applied to numbers, but got {other}"
+                        ),
+                        location.clone(),
+                    )),
                 }
-
             }
         }
     }
@@ -40,6 +44,13 @@ impl ExprVisitor<LoxObj> for Interpreter {
         match binary.operator.kind {
             TokenKind::EqualEqual => Ok(LoxObj::Bool(
                 self.is_equal(
+                    self.visit_expr(&binary.left)?,
+                    self.visit_expr(&binary.right)?,
+                ),
+                binary.operator.location.clone(),
+            )),
+            TokenKind::BangEqual => Ok(LoxObj::Bool(
+                !self.is_equal(
                     self.visit_expr(&binary.left)?,
                     self.visit_expr(&binary.right)?,
                 ),
@@ -63,11 +74,7 @@ impl Interpreter {
     }
 
     fn is_truthy(&self, obj: LoxObj) -> bool {
-        match obj {
-            LoxObj::Bool(b, _) => b,
-            LoxObj::Nil(_) => false,
-            _ => true,
-        }
+        !matches!(obj, LoxObj::Bool(false, _) | LoxObj::Nil(_))
     }
 
     fn is_equal(&self, a: LoxObj, b: LoxObj) -> bool {
