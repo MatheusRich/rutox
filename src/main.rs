@@ -51,9 +51,12 @@ fn run_repl() {
                 _ => {
                     rl.add_history_entry(line.as_str());
 
-                    match run(line) {
+                    match run(line.clone()) {
                         Ok(result) => println!("=> {}", result.as_colored_string()),
-                        Err(error) => println!("{error}"),
+                        Err(error) => {
+                            println!("{error}");
+                            println!("{}", error.details("repl"));
+                        }
                     }
                 }
             },
