@@ -28,7 +28,7 @@ fn run_file(path: &str) {
     });
 
     match run(file_content) {
-        Ok(result) => println!("{:?}", result),
+        Ok(result) => println!("{}", result),
         Err(err) => {
             println!("{err}");
             process::exit(exitcodes::DATAERR);
@@ -52,7 +52,7 @@ fn run_repl() {
                     rl.add_history_entry(line.as_str());
 
                     match run(line) {
-                        Ok(result) => println!("{:?}", result),
+                        Ok(result) => println!("=> {}", result.as_colored_string()),
                         Err(error) => println!("{error}"),
                     }
                 }

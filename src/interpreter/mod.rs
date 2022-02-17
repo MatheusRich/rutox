@@ -1,19 +1,18 @@
-use core::panic;
-use std::cmp::Ordering;
-
+mod lox_obj;
 use crate::parser::{
     ast::{BinaryData, BinaryOp, Expr, LiteralData, UnaryData, UnaryOp},
     visitor::ExprVisitor,
 };
 use crate::rutox_error::RutoxError;
-
-pub type LoxObj = LiteralData; // consider making this a separate type
+use core::panic;
+pub use lox_obj::LoxObj;
+use std::cmp::Ordering;
 
 pub struct Interpreter {}
 
 impl ExprVisitor<LoxObj> for Interpreter {
-    fn visit_literal_expr(&self, literal: &LoxObj) -> Result<LoxObj, RutoxError> {
-        Ok(literal.clone())
+    fn visit_literal_expr(&self, literal: &LiteralData) -> Result<LoxObj, RutoxError> {
+        Ok(literal.clone().into())
     }
 
     fn visit_grouping_expr(&self, expr: &Expr) -> Result<LoxObj, RutoxError> {
