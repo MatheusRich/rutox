@@ -1,6 +1,6 @@
 use crate::scanner::{token::Token, SrcLocation};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     Binary(BinaryData),
     Grouping(Box<Expr>, SrcLocation),
@@ -27,14 +27,14 @@ impl std::fmt::Display for LiteralData {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct UnaryData {
     pub operator: UnaryOp,
     pub expr: Box<Expr>,
     pub location: SrcLocation,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOp {
     Bang(SrcLocation),
     Minus(SrcLocation),
@@ -49,10 +49,20 @@ impl std::fmt::Display for UnaryOp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct BinaryData {
     pub operator: Token, // restrict further
     pub left: Box<Expr>,
     pub right: Box<Expr>,
     pub location: SrcLocation,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum BinaryOp {
+    BangEqual(SrcLocation),
+    EqualEqual(SrcLocation),
+    // Greater(SrcLocation),
+    // GreaterEqual(SrcLocation),
+    // Less(SrcLocation),
+    // LessEqual(SrcLocation),
 }

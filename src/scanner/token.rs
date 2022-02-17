@@ -1,7 +1,7 @@
 use super::src_location::SrcLocation;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub lexeme: String,

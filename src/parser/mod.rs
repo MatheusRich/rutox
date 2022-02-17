@@ -47,7 +47,12 @@ impl Parser {
     fn comparison(&mut self) -> Result<Expr, RutoxError> {
         let mut expr = self.term()?;
 
-        while self.match_any(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
+        while self.match_any(&[
+            TokenKind::Greater,
+            TokenKind::GreaterEqual,
+            TokenKind::Less,
+            TokenKind::LessEqual,
+        ]) {
             let operator = self.previous();
             let right = self.term()?;
 
@@ -237,6 +242,147 @@ impl Parser {
         match self.peek() {
             Some(token) => token.location.clone(),
             None => self.previous().location,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_parses_unary_exprs() {
+        let tokens = vec![
+            token(TokenKind::Bang, 1, 1),
+            token(TokenKind::Number(1.0), 1, 2),
+        ];
+
+        let result = Parser::new(tokens).parse().ok().unwrap();
+
+        assert_eq!(
+            result,
+            unary_expr(
+                number(1.0, 1, 2),
+                UnaryOp::Bang(SrcLocation::new(1, 1)),
+                SrcLocation::new(1, 1)
+            )
+        );
+
+        let tokens = vec![
+            token(TokenKind::Minus, 1, 1),
+            token(TokenKind::Number(1.0), 1, 2),
+        ];
+
+        let result = Parser::new(tokens).parse().ok().unwrap();
+
+        assert_eq!(
+            result,
+            unary_expr(
+                number(1.0, 1, 2),
+                UnaryOp::Minus(SrcLocation::new(1, 1)),
+                SrcLocation::new(1, 1)
+            )
+        );
+    }
+
+    #[test]
+    fn it_parses_equality() {
+        let tokens = vec![
+            token(TokenKind::Number(1.0), 1, 1),
+            token(TokenKind::EqualEqual, 1, 2),
+            token(TokenKind::Number(2.0), 1, 4),
+        ];
+
+        let result = Parser::new(tokens).parse().ok().unwrap();
+
+        assert_eq!(
+            result,
+            binary_expr(
+                number(1.0, 1, 1),
+                token(TokenKind::EqualEqual, 1, 2),
+                number(2.0, 1, 4),
+                SrcLocation::new(1, 2)
+            )
+        );
+    }
+
+    #[test]
+    fn it_parses_inequality() {
+        let tokens = vec![
+            token(TokenKind::Number(1.0), 1, 1),
+            token(TokenKind::BangEqual, 1, 2),
+            token(TokenKind::Number(2.0), 1, 4),
+        ];
+
+        let result = Parser::new(tokens).parse().ok().unwrap();
+
+        assert_eq!(
+            result,
+            binary_expr(
+                number(1.0, 1, 1),
+                token(TokenKind::BangEqual, 1, 2),
+                number(2.0, 1, 4),
+                SrcLocation::new(1, 2)
+            )
+        );
+    }
+
+    #[test]
+    fn it_parses_comparison() {
+        let comparison_ops = [
+            TokenKind::Greater,
+            TokenKind::GreaterEqual,
+            TokenKind::Less,
+            TokenKind::LessEqual,
+        ];
+
+        for operation in comparison_ops {
+            let tokens = vec![
+                token(TokenKind::Number(1.0), 1, 1),
+                token(operation.clone(), 1, 2),
+                token(TokenKind::Number(2.0), 1, 4),
+            ];
+
+            let result = Parser::new(tokens).parse().ok().unwrap();
+
+            assert_eq!(
+                result,
+                binary_expr(
+                    number(1.0, 1, 1),
+                    token(operation, 1, 2),
+                    number(2.0, 1, 4),
+                    SrcLocation::new(1, 2)
+                )
+            );
+        }
+    }
+
+    fn binary_expr(left: Expr, operator: Token, right: Expr, location: SrcLocation) -> Expr {
+        Expr::Binary(BinaryData {
+            left: Box::new(left),
+            right: Box::new(right),
+            operator,
+            location,
+        })
+    }
+
+    fn unary_expr(expr: Expr, operator: UnaryOp, location: SrcLocation) -> Expr {
+        Expr::Unary(UnaryData {
+            expr: Box::new(expr),
+            operator,
+            location,
+        })
+    }
+
+    fn number(value: f64, line: usize, column: usize) -> Expr {
+        Expr::Literal(LiteralData::Number(value, SrcLocation::new(line, column)))
+    }
+
+    fn token(kind: TokenKind, line: usize, col: usize) -> Token {
+        Token {
+            kind,
+            lexeme: "".to_string(),
+            location: SrcLocation::new(line, col),
         }
     }
 }
