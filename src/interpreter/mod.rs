@@ -57,7 +57,7 @@ impl ExprVisitor<LoxObj> for Interpreter {
                 binary.operator.location.clone(),
             )),
             _ => Err(RutoxError::Programmer(
-                format!("Unknown binary operator: {}", binary.operator.kind),
+                format!("Unknown binary operator `{}`", binary.operator.kind),
                 binary.operator.location.clone(),
             )),
         }
