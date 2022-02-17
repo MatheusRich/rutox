@@ -1,9 +1,11 @@
+use core::panic;
+use std::cmp::Ordering;
+
 use crate::parser::{
-    ast::{BinaryData, Expr, LiteralData, UnaryData, UnaryOp},
+    ast::{BinaryData, BinaryOp, Expr, LiteralData, UnaryData, UnaryOp},
     visitor::ExprVisitor,
 };
 use crate::rutox_error::RutoxError;
-use crate::scanner::token::TokenKind;
 
 pub type LoxObj = LiteralData; // consider making this a separate type
 
@@ -41,25 +43,49 @@ impl ExprVisitor<LoxObj> for Interpreter {
     }
 
     fn visit_binary_expr(&self, binary: &BinaryData) -> Result<LoxObj, RutoxError> {
-        match binary.operator.kind {
-            TokenKind::EqualEqual => Ok(LoxObj::Bool(
+        match &binary.operator {
+            BinaryOp::EqualEqual(location) => Ok(LoxObj::Bool(
                 self.is_equal(
                     self.visit_expr(&binary.left)?,
                     self.visit_expr(&binary.right)?,
                 ),
-                binary.operator.location.clone(),
+                location.clone(),
             )),
-            TokenKind::BangEqual => Ok(LoxObj::Bool(
+            BinaryOp::BangEqual(location) => Ok(LoxObj::Bool(
                 !self.is_equal(
                     self.visit_expr(&binary.left)?,
                     self.visit_expr(&binary.right)?,
                 ),
-                binary.operator.location.clone(),
+                location.clone(),
             )),
-            _ => Err(RutoxError::Programmer(
-                format!("Unknown binary operator `{}`", binary.operator.kind),
-                binary.operator.location.clone(),
-            )),
+            BinaryOp::Greater(location)
+            | BinaryOp::Less(location)
+            | BinaryOp::GreaterEqual(location)
+            | BinaryOp::LessEqual(location) => {
+                let a = &self.visit_expr(&binary.left)?;
+                let b = &self.visit_expr(&binary.right)?;
+                let ordering = self.compare(a, b).ok_or_else(|| {
+                    RutoxError::Runtime(format!("Cannot compare `{a}`and `{b}`"), location.clone())
+                })?;
+
+                match &binary.operator {
+                    BinaryOp::Greater(_) => Ok(LoxObj::Bool(
+                        ordering == Ordering::Greater,
+                        location.clone(),
+                    )),
+                    BinaryOp::GreaterEqual(_) => {
+                        Ok(LoxObj::Bool(ordering != Ordering::Less, location.clone()))
+                    }
+                    BinaryOp::Less(_) => {
+                        Ok(LoxObj::Bool(ordering == Ordering::Less, location.clone()))
+                    }
+                    BinaryOp::LessEqual(_) => Ok(LoxObj::Bool(
+                        ordering != Ordering::Greater,
+                        location.clone(),
+                    )),
+                    _ => panic!("Unreachable"),
+                }
+            }
         }
     }
 }
@@ -84,6 +110,14 @@ impl Interpreter {
             (LoxObj::Number(n1, _), LoxObj::Number(n2, _)) => n1 == n2,
             (LoxObj::String(s1, _), LoxObj::String(s2, _)) => s1 == s2,
             _ => false,
+        }
+    }
+
+    fn compare(&self, a: &LoxObj, b: &LoxObj) -> Option<Ordering> {
+        match (a, b) {
+            (LoxObj::Number(a, _), LoxObj::Number(b, _)) => a.partial_cmp(b),
+            (LoxObj::String(a, _), LoxObj::String(b, _)) => a.partial_cmp(b),
+            _ => None,
         }
     }
 }

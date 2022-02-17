@@ -36,7 +36,7 @@ impl Parser {
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
                 location: operator.location.clone(),
-                operator,
+                operator: operator.into(),
                 right: Box::new(right),
             });
         }
@@ -59,7 +59,7 @@ impl Parser {
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
                 location: operator.location.clone(),
-                operator,
+                operator: operator.into(),
                 right: Box::new(right),
             });
         }
@@ -77,7 +77,7 @@ impl Parser {
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
                 location: operator.location.clone(),
-                operator,
+                operator: operator.into(),
                 right: Box::new(right),
             });
         }
@@ -95,7 +95,7 @@ impl Parser {
             expr = Expr::Binary(BinaryData {
                 left: Box::new(expr),
                 location: operator.location.clone(),
-                operator,
+                operator: operator.into(),
                 right: Box::new(right),
             });
         }
@@ -153,6 +153,7 @@ impl Parser {
         }
     }
 
+    #[allow(dead_code)]
     fn synchronize(&mut self) {
         self.advance();
 
@@ -248,6 +249,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use super::ast::BinaryOp;
     use super::*;
 
     #[test]
@@ -299,7 +301,7 @@ mod tests {
             result,
             binary_expr(
                 number(1.0, 1, 1),
-                token(TokenKind::EqualEqual, 1, 2),
+                BinaryOp::EqualEqual(SrcLocation::new(1, 2)),
                 number(2.0, 1, 4),
                 SrcLocation::new(1, 2)
             )
@@ -320,7 +322,7 @@ mod tests {
             result,
             binary_expr(
                 number(1.0, 1, 1),
-                token(TokenKind::BangEqual, 1, 2),
+                BinaryOp::BangEqual(SrcLocation::new(1, 2)),
                 number(2.0, 1, 4),
                 SrcLocation::new(1, 2)
             )
@@ -329,27 +331,27 @@ mod tests {
 
     #[test]
     fn it_parses_comparison() {
-        let comparison_ops = [
+        let comparison_token_kinds = [
             TokenKind::Greater,
             TokenKind::GreaterEqual,
             TokenKind::Less,
             TokenKind::LessEqual,
         ];
 
-        for operation in comparison_ops {
+        for token_kind in comparison_token_kinds {
             let tokens = vec![
                 token(TokenKind::Number(1.0), 1, 1),
-                token(operation.clone(), 1, 2),
+                token(token_kind, 1, 2),
                 token(TokenKind::Number(2.0), 1, 4),
             ];
 
-            let result = Parser::new(tokens).parse().ok().unwrap();
+            let result = Parser::new(tokens.clone()).parse().ok().unwrap();
 
             assert_eq!(
                 result,
                 binary_expr(
                     number(1.0, 1, 1),
-                    token(operation, 1, 2),
+                    tokens[1].clone().into(),
                     number(2.0, 1, 4),
                     SrcLocation::new(1, 2)
                 )
@@ -357,7 +359,7 @@ mod tests {
         }
     }
 
-    fn binary_expr(left: Expr, operator: Token, right: Expr, location: SrcLocation) -> Expr {
+    fn binary_expr(left: Expr, operator: BinaryOp, right: Expr, location: SrcLocation) -> Expr {
         Expr::Binary(BinaryData {
             left: Box::new(left),
             right: Box::new(right),
