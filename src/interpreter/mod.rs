@@ -1,9 +1,11 @@
-use crate::parser::ast::{BinaryData, LiteralData, UnaryData};
-use crate::parser::{ast::Expr, visitor::ExprVisitor};
+use crate::parser::{
+    ast::{BinaryData, Expr, LiteralData, UnaryData, UnaryOp},
+    visitor::ExprVisitor,
+};
 use crate::rutox_error::RutoxError;
 use crate::scanner::token::TokenKind;
 
-pub type LoxObj = LiteralData;
+pub type LoxObj = LiteralData; // consider making this a separate type
 
 pub struct Interpreter {}
 
@@ -17,15 +19,20 @@ impl ExprVisitor<LoxObj> for Interpreter {
     }
 
     fn visit_unary_expr(&self, unary: &UnaryData) -> Result<LoxObj, RutoxError> {
-        match unary.operator.kind {
-            TokenKind::Bang => Ok(LoxObj::Bool(
+        match &unary.operator {
+            UnaryOp::Bang(location) => Ok(LoxObj::Bool(
                 !self.is_truthy(self.visit_expr(&unary.expr)?),
-                unary.operator.location.clone(),
+                location.clone(),
             )),
-            _ => Err(RutoxError::ProgrammerError(
-                format!("Unknown unary operator: {}", unary.operator.kind),
-                unary.operator.location.clone(),
-            )),
+            UnaryOp::Minus(location) => {
+                let value = self.visit_expr(&unary.expr)?;
+
+                match value {
+                    LoxObj::Number(number, _) => Ok(LoxObj::Number(-number, location.clone())),
+                    other => Err(RutoxError::Runtime(format!("Unary operator `-` can only be applied to numbers, but got {other}"), location.clone())),
+                }
+
+            }
         }
     }
 
@@ -38,7 +45,7 @@ impl ExprVisitor<LoxObj> for Interpreter {
                 ),
                 binary.operator.location.clone(),
             )),
-            _ => Err(RutoxError::ProgrammerError(
+            _ => Err(RutoxError::Programmer(
                 format!("Unknown binary operator: {}", binary.operator.kind),
                 binary.operator.location.clone(),
             )),

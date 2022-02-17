@@ -102,11 +102,16 @@ impl Parser {
         if self.match_any(&[TokenKind::Bang, TokenKind::Minus]) {
             let operator = self.previous();
             let expr = self.unary()?;
+            let op = if operator.kind == TokenKind::Bang {
+                UnaryOp::Bang(operator.location.clone())
+            } else {
+                UnaryOp::Minus(operator.location.clone())
+            };
 
             return Ok(Expr::Unary(UnaryData {
                 expr: Box::new(expr),
-                location: operator.location.clone(),
-                operator,
+                location: operator.location,
+                operator: op,
             }));
         }
 
