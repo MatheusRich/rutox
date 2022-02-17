@@ -6,7 +6,7 @@ use crate::scanner::{
     token::{Token, TokenKind},
     SrcLocation,
 };
-use ast::{BinaryData, Expr, LiteralData, UnaryData};
+use ast::{BinaryData, Expr, LiteralData, UnaryData, UnaryOp};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -136,7 +136,7 @@ impl Parser {
 
                 Ok(Expr::Grouping(Box::new(expr), token.location.clone()))
             }
-            _ => Err(RutoxError::SyntaxError(
+            _ => Err(RutoxError::Syntax(
                 format!("Expect expression, got `{}`", token),
                 token.location.clone(),
             )),
@@ -191,7 +191,7 @@ impl Parser {
 
     fn try_advance(&mut self) -> Result<Token, RutoxError> {
         if self.is_at_end() {
-            Err(RutoxError::SyntaxError(
+            Err(RutoxError::Syntax(
                 "Unexpected end of input".to_string(),
                 self.previous().location,
             ))
@@ -221,7 +221,7 @@ impl Parser {
         if self.check(&kind) {
             Ok(self.advance())
         } else {
-            Err(RutoxError::SyntaxError(
+            Err(RutoxError::Syntax(
                 message.to_string(),
                 self.current_location(),
             ))

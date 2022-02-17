@@ -91,7 +91,7 @@ impl Scanner {
             c if c.is_digit(10) => self.consume_number()?,
             c if c.is_ascii_alphabetic() || c == '_' => self.consume_identifier(),
             c => {
-                return Err(RutoxError::SyntaxError(
+                return Err(RutoxError::Syntax(
                     format!("Unexpected character: `{c}`"),
                     self.current_location(),
                 ))
@@ -113,7 +113,7 @@ impl Scanner {
 
         let n_string = &self.source[self.start..self.current];
         let n = n_string.parse::<f64>().map_err(|_| {
-            RutoxError::ProgrammerError(
+            RutoxError::Programmer(
                 format!("Could not parse number `{n_string}`"),
                 self.current_location(),
             )
@@ -137,7 +137,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            return Err(RutoxError::SyntaxError(
+            return Err(RutoxError::Syntax(
                 "Unterminated string".into(),
                 self.current_location(),
             ));
@@ -234,7 +234,7 @@ impl Scanner {
         if current == expected {
             Ok(current)
         } else {
-            Err(RutoxError::ProgrammerError(
+            Err(RutoxError::Programmer(
                 format!("Expected `{expected}`, found `{current}`"),
                 self.current_location(),
             ))
