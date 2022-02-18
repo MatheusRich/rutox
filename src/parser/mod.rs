@@ -1,5 +1,4 @@
 pub mod ast;
-pub mod ast_printer;
 pub mod visitor;
 use crate::rutox_error::RutoxError;
 use crate::scanner::{
@@ -232,7 +231,7 @@ impl Parser {
         if self.check(&kind) {
             Ok(self.advance())
         } else {
-            Err(RutoxError::Syntax(
+            Err(RutoxError::Programmer(
                 message.to_string(),
                 self.current_location(),
             ))
