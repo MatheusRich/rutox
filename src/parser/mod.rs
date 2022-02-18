@@ -358,6 +358,36 @@ mod tests {
         }
     }
 
+    #[test]
+    fn it_parses_mathematical_operations() {
+        let math_token_kinds = [
+            TokenKind::Plus,
+            TokenKind::Minus,
+            TokenKind::Star,
+            TokenKind::Slash,
+        ];
+
+        for token_kind in math_token_kinds {
+            let tokens = vec![
+                token(TokenKind::Number(1.0), 1, 1),
+                token(token_kind, 1, 2),
+                token(TokenKind::Number(2.0), 1, 3),
+            ];
+
+            let result = Parser::new(tokens.clone()).parse().ok().unwrap();
+
+            assert_eq!(
+                result,
+                binary_expr(
+                    number(1.0, 1, 1),
+                    tokens[1].clone().into(),
+                    number(2.0, 1, 3),
+                    SrcLocation::new(1, 2)
+                )
+            )
+        }
+    }
+
     fn binary_expr(left: Expr, operator: BinaryOp, right: Expr, location: SrcLocation) -> Expr {
         Expr::Binary(BinaryData {
             left: Box::new(left),

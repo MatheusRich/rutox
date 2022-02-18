@@ -88,6 +88,69 @@ impl ExprVisitor<LoxObj> for Interpreter {
                     _ => panic!("Unreachable"),
                 }
             }
+            BinaryOp::Plus(location) => {
+                let a = &self.visit_expr(&binary.left)?;
+                let b = &self.visit_expr(&binary.right)?;
+
+                match (a, b) {
+                    (LoxObj::Number(a, _), LoxObj::Number(b, _)) => {
+                        Ok(LoxObj::Number(a + b, location.clone()))
+                    }
+                    (LoxObj::String(s1, _), LoxObj::String(s2, _)) => {
+                        Ok(LoxObj::String(format!("{}{}", s1, s2), location.clone()))
+                    }
+                    _ => Err(RutoxError::Runtime(
+                        format!("Cannot compare {:?} and {:?}", a, b),
+                        location.clone(),
+                    )),
+                }
+            }
+            BinaryOp::Minus(location) => {
+                let a = &self.visit_expr(&binary.left)?;
+                let b = &self.visit_expr(&binary.right)?;
+
+                match (a, b) {
+                    (LoxObj::Number(a, _), LoxObj::Number(b, _)) => {
+                        Ok(LoxObj::Number(a - b, location.clone()))
+                    }
+                    _ => Err(RutoxError::Runtime(
+                        format!("Cannot subtract {:?} and {:?}", a, b),
+                        location.clone(),
+                    )),
+                }
+            }
+            BinaryOp::Div(location) => {
+                let a = &self.visit_expr(&binary.left)?;
+                let b = &self.visit_expr(&binary.right)?;
+
+                match (a, b) {
+                    (LoxObj::Number(a, _), LoxObj::Number(b, _)) => {
+                        Ok(LoxObj::Number(a / b, location.clone()))
+                    }
+                    _ => Err(RutoxError::Runtime(
+                        format!("Cannot divide {:?} and {:?}", a, b),
+                        location.clone(),
+                    )),
+                }
+            }
+            BinaryOp::Mul(location) => {
+                let a = &self.visit_expr(&binary.left)?;
+                let b = &self.visit_expr(&binary.right)?;
+
+                match (a, b) {
+                    (LoxObj::Number(a, _), LoxObj::Number(b, _)) => {
+                        Ok(LoxObj::Number(a * b, location.clone()))
+                    }
+                    (LoxObj::String(s, _), LoxObj::Number(times, _)) => Ok(LoxObj::String(
+                        s.repeat((*times) as usize),
+                        location.clone(),
+                    )),
+                    _ => Err(RutoxError::Runtime(
+                        format!("Cannot multiply {:?} and {:?}", a, b),
+                        location.clone(),
+                    )),
+                }
+            }
         }
     }
 }

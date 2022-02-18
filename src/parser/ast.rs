@@ -68,6 +68,10 @@ pub enum BinaryOp {
     GreaterEqual(SrcLocation),
     Less(SrcLocation),
     LessEqual(SrcLocation),
+    Plus(SrcLocation),
+    Minus(SrcLocation),
+    Div(SrcLocation),
+    Mul(SrcLocation),
 }
 
 impl From<Token> for BinaryOp {
@@ -79,6 +83,10 @@ impl From<Token> for BinaryOp {
             TokenKind::GreaterEqual => BinaryOp::GreaterEqual(item.location),
             TokenKind::Less => BinaryOp::Less(item.location),
             TokenKind::LessEqual => BinaryOp::LessEqual(item.location),
+            TokenKind::Plus => BinaryOp::Plus(item.location),
+            TokenKind::Minus => BinaryOp::Minus(item.location),
+            TokenKind::Slash => BinaryOp::Div(item.location),
+            TokenKind::Star => BinaryOp::Mul(item.location),
             _ => panic!("Cannot convert `{}` to BinaryOp", item.kind),
         }
     }
@@ -93,6 +101,10 @@ impl std::fmt::Display for BinaryOp {
             BinaryOp::GreaterEqual(_) => write!(f, ">="),
             BinaryOp::Less(_) => write!(f, "<"),
             BinaryOp::LessEqual(_) => write!(f, "<="),
+            BinaryOp::Plus(_) => write!(f, "+"),
+            BinaryOp::Minus(_) => write!(f, "-"),
+            BinaryOp::Div(_) => write!(f, "/"),
+            BinaryOp::Mul(_) => write!(f, "*"),
         }
     }
 }
