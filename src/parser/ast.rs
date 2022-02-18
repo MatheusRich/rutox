@@ -6,8 +6,8 @@ use crate::scanner::{
 // TODO: add location
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
-    Print(Expr),
-    Expr(Expr),
+    Print(Expr, SrcLocation),
+    Expr(Expr, SrcLocation),
 }
 
 #[derive(Debug, PartialEq)]
@@ -16,6 +16,17 @@ pub enum Expr {
     Grouping(Box<Expr>, SrcLocation),
     Unary(UnaryData),
     Literal(LiteralData),
+}
+
+impl Expr {
+    pub fn location(&self) -> SrcLocation {
+        match self {
+            Expr::Binary(binary) => binary.location,
+            Expr::Grouping(expr, location) => location.clone(),
+            Expr::Literal(literal) => literal.location(),
+            Expr::Unary(unary) => unary.location,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -33,6 +44,17 @@ impl std::fmt::Display for LiteralData {
             LiteralData::Number(n, _) => write!(f, "number {n}"),
             LiteralData::Bool(bool, _) => write!(f, "boolean {bool}"),
             LiteralData::Nil(_) => write!(f, "nil"),
+        }
+    }
+}
+
+impl LiteralData {
+    pub fn location(&self) -> SrcLocation {
+        match self {
+            LiteralData::String(_, location) => location.clone(),
+            LiteralData::Bool(_, location) => location.clone(),
+            LiteralData::Nil(location) => location.clone(),
+            LiteralData::Number(_, location) => location.clone(),
         }
     }
 }

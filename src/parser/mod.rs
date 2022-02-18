@@ -39,14 +39,14 @@ impl Parser {
         let value = self.expression()?;
         self.expect(TokenKind::Semicolon, "Expect `;` after value")?;
 
-        Ok(Stmt::Print(value))
+        Ok(Stmt::Print(value, self.previous().location))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, RutoxError> {
         let expr = self.expression()?;
         self.expect(TokenKind::Semicolon, "Expect `;` after expression")?;
 
-        Ok(Stmt::Expr(expr))
+        Ok(Stmt::Expr(expr, expr.location()))
     }
 
     fn expression(&mut self) -> Result<Expr, RutoxError> {
@@ -270,188 +270,6 @@ impl Parser {
         match self.peek() {
             Some(token) => token.location.clone(),
             None => self.previous().location,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::ast::BinaryOp;
-    use super::*;
-
-    #[test]
-    fn it_parses_unary_exprs() {
-        let tokens = vec![
-            token(TokenKind::Bang, 1, 1),
-            token(TokenKind::Number(1.0), 1, 2),
-            token(TokenKind::Semicolon, 1, 3),
-        ];
-
-        let result = Parser::new(tokens).parse().ok().unwrap();
-
-        assert_eq!(
-            result,
-            vec![stmt_expr(unary_expr(
-                number(1.0, 1, 2),
-                UnaryOp::Bang(SrcLocation::new(1, 1)),
-                SrcLocation::new(1, 1)
-            ))]
-        );
-
-        let tokens = vec![
-            token(TokenKind::Minus, 1, 1),
-            token(TokenKind::Number(1.0), 1, 2),
-            token(TokenKind::Semicolon, 1, 3),
-        ];
-
-        let result = Parser::new(tokens).parse().ok().unwrap();
-
-        assert_eq!(
-            result,
-            vec![stmt_expr(unary_expr(
-                number(1.0, 1, 2),
-                UnaryOp::Minus(SrcLocation::new(1, 1)),
-                SrcLocation::new(1, 1)
-            ))]
-        );
-    }
-
-    #[test]
-    fn it_parses_equality() {
-        let tokens = vec![
-            token(TokenKind::Number(1.0), 1, 1),
-            token(TokenKind::EqualEqual, 1, 2),
-            token(TokenKind::Number(2.0), 1, 4),
-            token(TokenKind::Semicolon, 1, 5),
-        ];
-
-        let result = Parser::new(tokens).parse().ok().unwrap();
-
-        assert_eq!(
-            result,
-            vec![stmt_expr(binary_expr(
-                number(1.0, 1, 1),
-                BinaryOp::EqualEqual(SrcLocation::new(1, 2)),
-                number(2.0, 1, 4),
-                SrcLocation::new(1, 2)
-            ))]
-        );
-    }
-
-    #[test]
-    fn it_parses_inequality() {
-        let tokens = vec![
-            token(TokenKind::Number(1.0), 1, 1),
-            token(TokenKind::BangEqual, 1, 2),
-            token(TokenKind::Number(2.0), 1, 4),
-            token(TokenKind::Semicolon, 1, 5),
-        ];
-
-        let result = Parser::new(tokens).parse().ok().unwrap();
-
-        assert_eq!(
-            result,
-            vec![stmt_expr(binary_expr(
-                number(1.0, 1, 1),
-                BinaryOp::BangEqual(SrcLocation::new(1, 2)),
-                number(2.0, 1, 4),
-                SrcLocation::new(1, 2)
-            ))]
-        );
-    }
-
-    #[test]
-    fn it_parses_comparison() {
-        let comparison_token_kinds = [
-            TokenKind::Greater,
-            TokenKind::GreaterEqual,
-            TokenKind::Less,
-            TokenKind::LessEqual,
-        ];
-
-        for token_kind in comparison_token_kinds {
-            let tokens = vec![
-                token(TokenKind::Number(1.0), 1, 1),
-                token(token_kind, 1, 2),
-                token(TokenKind::Number(2.0), 1, 4),
-                token(TokenKind::Semicolon, 1, 5),
-            ];
-
-            let result = Parser::new(tokens.clone()).parse().ok().unwrap();
-
-            assert_eq!(
-                result,
-                vec![stmt_expr(binary_expr(
-                    number(1.0, 1, 1),
-                    tokens[1].clone().into(),
-                    number(2.0, 1, 4),
-                    SrcLocation::new(1, 2)
-                ))]
-            );
-        }
-    }
-
-    #[test]
-    fn it_parses_mathematical_operations() {
-        let math_token_kinds = [
-            TokenKind::Plus,
-            TokenKind::Minus,
-            TokenKind::Star,
-            TokenKind::Slash,
-        ];
-
-        for token_kind in math_token_kinds {
-            let tokens = vec![
-                token(TokenKind::Number(1.0), 1, 1),
-                token(token_kind, 1, 2),
-                token(TokenKind::Number(2.0), 1, 3),
-                token(TokenKind::Semicolon, 1, 4),
-            ];
-
-            let result = Parser::new(tokens.clone()).parse().ok().unwrap();
-
-            assert_eq!(
-                result,
-                vec![stmt_expr(binary_expr(
-                    number(1.0, 1, 1),
-                    tokens[1].clone().into(),
-                    number(2.0, 1, 3),
-                    SrcLocation::new(1, 2)
-                ))]
-            )
-        }
-    }
-
-    fn stmt_expr(expr: Expr) -> Stmt {
-        Stmt::Expr(expr)
-    }
-
-    fn binary_expr(left: Expr, operator: BinaryOp, right: Expr, location: SrcLocation) -> Expr {
-        Expr::Binary(BinaryData {
-            left: Box::new(left),
-            right: Box::new(right),
-            operator,
-            location,
-        })
-    }
-
-    fn unary_expr(expr: Expr, operator: UnaryOp, location: SrcLocation) -> Expr {
-        Expr::Unary(UnaryData {
-            expr: Box::new(expr),
-            operator,
-            location,
-        })
-    }
-
-    fn number(value: f64, line: usize, column: usize) -> Expr {
-        Expr::Literal(LiteralData::Number(value, SrcLocation::new(line, column)))
-    }
-
-    fn token(kind: TokenKind, line: usize, col: usize) -> Token {
-        Token {
-            kind,
-            lexeme: "".to_string(),
-            location: SrcLocation::new(line, col),
         }
     }
 }
