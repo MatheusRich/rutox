@@ -1,7 +1,6 @@
 use super::ast::*;
 use crate::rutox_error::RutoxError;
 
-
 pub trait ExprVisitor<T> {
     fn visit_expr(&self, expr: &Expr) -> Result<T, RutoxError> {
         match expr {

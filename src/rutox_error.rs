@@ -59,7 +59,8 @@ impl RutoxError {
     }
 
     fn code_excerpt(&self, source_file_content: &str) -> String {
-        let error_line_and_surroundings = self.extract_error_line_and_surroundings(source_file_content);
+        let error_line_and_surroundings =
+            self.extract_error_line_and_surroundings(source_file_content);
         let biggest_line_num_digit_count = error_line_and_surroundings
             .iter()
             .last()
