@@ -27,10 +27,11 @@ fn run_file(path: &str) {
         process::exit(exitcodes::IOERR);
     });
 
-    match run(file_content) {
-        Ok(result) => println!("{}", result),
-        Err(err) => {
-            println!("{err}");
+    match run(file_content.clone()) {
+        Ok(_result) => {}
+        Err(error) => {
+            println!("{error}");
+            println!("{}", error.details(path, &file_content));
             process::exit(exitcodes::DATAERR);
         }
     }
@@ -55,7 +56,7 @@ fn run_repl() {
                         Ok(result) => println!("=> {}", result.as_colored_string()),
                         Err(error) => {
                             println!("{error}");
-                            println!("{}", error.details("repl"));
+                            println!("{}", error.details("repl", &line));
                         }
                     }
                 }
