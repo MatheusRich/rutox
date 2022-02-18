@@ -231,7 +231,7 @@ impl Parser {
         if self.check(&kind) {
             Ok(self.advance())
         } else {
-            Err(RutoxError::Programmer(
+            Err(RutoxError::Syntax(
                 message.to_string(),
                 self.current_location(),
             ))
