@@ -3,6 +3,13 @@ use crate::scanner::{
     SrcLocation,
 };
 
+// TODO: add location
+#[derive(Debug, PartialEq)]
+pub enum Stmt {
+    Print(Expr),
+    Expr(Expr),
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     Binary(BinaryData),

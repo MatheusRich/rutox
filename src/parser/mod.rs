@@ -1,11 +1,11 @@
 pub mod ast;
-pub mod visitor;
+pub mod visitors;
 use crate::rutox_error::RutoxError;
 use crate::scanner::{
     token::{Token, TokenKind},
     SrcLocation,
 };
-use ast::{BinaryData, Expr, LiteralData, UnaryData, UnaryOp};
+use ast::{BinaryData, Expr, LiteralData, Stmt, UnaryData, UnaryOp};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -17,8 +17,36 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, RutoxError> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, RutoxError> {
+        let mut stmts = vec![];
+
+        while !self.is_at_end() {
+            stmts.push(self.statement()?)
+        }
+
+        Ok(stmts)
+    }
+
+    fn statement(&mut self) -> Result<Stmt, RutoxError> {
+        if self.match_any(&[TokenKind::Print]) {
+            return self.print_statement();
+        }
+
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, RutoxError> {
+        let value = self.expression()?;
+        self.expect(TokenKind::Semicolon, "Expect `;` after value")?;
+
+        Ok(Stmt::Print(value))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, RutoxError> {
+        let expr = self.expression()?;
+        self.expect(TokenKind::Semicolon, "Expect `;` after expression")?;
+
+        Ok(Stmt::Expr(expr))
     }
 
     fn expression(&mut self) -> Result<Expr, RutoxError> {
@@ -216,7 +244,7 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek().is_none()
+        self.peek().is_none() || self.peek().unwrap().kind == TokenKind::Eof
     }
 
     fn advance(&mut self) -> Token {
@@ -256,33 +284,35 @@ mod tests {
         let tokens = vec![
             token(TokenKind::Bang, 1, 1),
             token(TokenKind::Number(1.0), 1, 2),
+            token(TokenKind::Semicolon, 1, 3),
         ];
 
         let result = Parser::new(tokens).parse().ok().unwrap();
 
         assert_eq!(
             result,
-            unary_expr(
+            vec![stmt_expr(unary_expr(
                 number(1.0, 1, 2),
                 UnaryOp::Bang(SrcLocation::new(1, 1)),
                 SrcLocation::new(1, 1)
-            )
+            ))]
         );
 
         let tokens = vec![
             token(TokenKind::Minus, 1, 1),
             token(TokenKind::Number(1.0), 1, 2),
+            token(TokenKind::Semicolon, 1, 3),
         ];
 
         let result = Parser::new(tokens).parse().ok().unwrap();
 
         assert_eq!(
             result,
-            unary_expr(
+            vec![stmt_expr(unary_expr(
                 number(1.0, 1, 2),
                 UnaryOp::Minus(SrcLocation::new(1, 1)),
                 SrcLocation::new(1, 1)
-            )
+            ))]
         );
     }
 
@@ -292,18 +322,19 @@ mod tests {
             token(TokenKind::Number(1.0), 1, 1),
             token(TokenKind::EqualEqual, 1, 2),
             token(TokenKind::Number(2.0), 1, 4),
+            token(TokenKind::Semicolon, 1, 5),
         ];
 
         let result = Parser::new(tokens).parse().ok().unwrap();
 
         assert_eq!(
             result,
-            binary_expr(
+            vec![stmt_expr(binary_expr(
                 number(1.0, 1, 1),
                 BinaryOp::EqualEqual(SrcLocation::new(1, 2)),
                 number(2.0, 1, 4),
                 SrcLocation::new(1, 2)
-            )
+            ))]
         );
     }
 
@@ -313,18 +344,19 @@ mod tests {
             token(TokenKind::Number(1.0), 1, 1),
             token(TokenKind::BangEqual, 1, 2),
             token(TokenKind::Number(2.0), 1, 4),
+            token(TokenKind::Semicolon, 1, 5),
         ];
 
         let result = Parser::new(tokens).parse().ok().unwrap();
 
         assert_eq!(
             result,
-            binary_expr(
+            vec![stmt_expr(binary_expr(
                 number(1.0, 1, 1),
                 BinaryOp::BangEqual(SrcLocation::new(1, 2)),
                 number(2.0, 1, 4),
                 SrcLocation::new(1, 2)
-            )
+            ))]
         );
     }
 
@@ -342,18 +374,19 @@ mod tests {
                 token(TokenKind::Number(1.0), 1, 1),
                 token(token_kind, 1, 2),
                 token(TokenKind::Number(2.0), 1, 4),
+                token(TokenKind::Semicolon, 1, 5),
             ];
 
             let result = Parser::new(tokens.clone()).parse().ok().unwrap();
 
             assert_eq!(
                 result,
-                binary_expr(
+                vec![stmt_expr(binary_expr(
                     number(1.0, 1, 1),
                     tokens[1].clone().into(),
                     number(2.0, 1, 4),
                     SrcLocation::new(1, 2)
-                )
+                ))]
             );
         }
     }
@@ -372,20 +405,25 @@ mod tests {
                 token(TokenKind::Number(1.0), 1, 1),
                 token(token_kind, 1, 2),
                 token(TokenKind::Number(2.0), 1, 3),
+                token(TokenKind::Semicolon, 1, 4),
             ];
 
             let result = Parser::new(tokens.clone()).parse().ok().unwrap();
 
             assert_eq!(
                 result,
-                binary_expr(
+                vec![stmt_expr(binary_expr(
                     number(1.0, 1, 1),
                     tokens[1].clone().into(),
                     number(2.0, 1, 3),
                     SrcLocation::new(1, 2)
-                )
+                ))]
             )
         }
+    }
+
+    fn stmt_expr(expr: Expr) -> Stmt {
+        Stmt::Expr(expr)
     }
 
     fn binary_expr(left: Expr, operator: BinaryOp, right: Expr, location: SrcLocation) -> Expr {

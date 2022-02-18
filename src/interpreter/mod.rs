@@ -1,7 +1,7 @@
 mod lox_obj;
 use crate::parser::{
-    ast::{BinaryData, BinaryOp, Expr, LiteralData, UnaryData, UnaryOp},
-    visitor::ExprVisitor,
+    ast::{BinaryData, BinaryOp, Expr, LiteralData, Stmt, UnaryData, UnaryOp},
+    visitors::{ExprVisitor, StmtVisitor},
 };
 use crate::rutox_error::RutoxError;
 use core::panic;
@@ -9,6 +9,21 @@ pub use lox_obj::LoxObj;
 use std::cmp::Ordering;
 
 pub struct Interpreter {}
+
+impl StmtVisitor<()> for Interpreter {
+    fn visit_print_stmt(&self, expr: &Expr) -> Result<(), RutoxError> {
+        let value = self.visit_expr(expr)?;
+        println!("{value}");
+
+        Ok(())
+    }
+
+    fn visit_expr_stmt(&self, expr: &Expr) -> Result<(), RutoxError> {
+        self.visit_expr(expr)?;
+
+        Ok(())
+    }
+}
 
 impl ExprVisitor<LoxObj> for Interpreter {
     fn visit_literal_expr(&self, literal: &LiteralData) -> Result<LoxObj, RutoxError> {
@@ -160,8 +175,12 @@ impl Interpreter {
         Interpreter {}
     }
 
-    pub fn interpret(&self, expr: &Expr) -> Result<LoxObj, RutoxError> {
-        self.visit_expr(expr)
+    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<(), RutoxError> {
+        for stmt in stmts {
+            self.visit_stmt(&stmt)?;
+        }
+
+        Ok(())
     }
 
     fn is_truthy(&self, obj: LoxObj) -> bool {
