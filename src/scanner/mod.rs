@@ -121,6 +121,8 @@ impl Scanner {
     }
 
     fn consume_string(&mut self) -> Result<(), RutoxError> {
+        let opening_quote_location = self.current_location();
+
         while let Some(ch) = self.peek() {
             if ch == '"' {
                 break;
@@ -136,7 +138,7 @@ impl Scanner {
         if self.is_at_end() {
             return Err(RutoxError::Syntax(
                 "Unterminated string".into(),
-                self.current_location(),
+                opening_quote_location,
             ));
         }
 
