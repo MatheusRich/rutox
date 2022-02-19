@@ -15,6 +15,9 @@ pub trait ExprVisitor<T> {
             Expr::Assign(name, value, location) => {
                 self.visit_assign_expr(name, (*value).clone(), location)
             }
+            Expr::Logical(left, op, right, location) => {
+                self.visit_logical_expr(left, op, right, location)
+            }
         }
     }
 
@@ -27,6 +30,13 @@ pub trait ExprVisitor<T> {
         &mut self,
         name: &Token,
         value: Box<Expr>,
+        location: &SrcLocation,
+    ) -> Result<T, RutoxError>;
+    fn visit_logical_expr(
+        &mut self,
+        left: &Expr,
+        op: &LogicalOp,
+        right: &Expr,
         location: &SrcLocation,
     ) -> Result<T, RutoxError>;
 }
@@ -54,11 +64,8 @@ pub trait StmtVisitor<T> {
         initializer: &Option<Expr>,
         location: &SrcLocation,
     ) -> Result<T, RutoxError>;
-    fn visit_block_stmt(
-        &mut self,
-        exprs: &[Stmt],
-        location: &SrcLocation,
-    ) -> Result<T, RutoxError>;
+    fn visit_block_stmt(&mut self, exprs: &[Stmt], location: &SrcLocation)
+        -> Result<T, RutoxError>;
     fn visit_if_stmt(
         &mut self,
         cond: &Expr,

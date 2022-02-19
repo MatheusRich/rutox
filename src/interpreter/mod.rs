@@ -1,7 +1,7 @@
 mod env;
 mod lox_obj;
 use crate::parser::{
-    ast::{BinaryData, BinaryOp, Expr, LiteralData, Stmt, UnaryData, UnaryOp},
+    ast::{BinaryData, BinaryOp, Expr, LiteralData, LogicalOp, Stmt, UnaryData, UnaryOp},
     visitors::{ExprVisitor, StmtVisitor},
 };
 use crate::rutox_error::RutoxError;
@@ -24,7 +24,7 @@ impl StmtVisitor<()> for Interpreter {
     ) -> Result<(), RutoxError> {
         let cond = self.visit_expr(cond)?;
 
-        if self.is_truthy(cond) {
+        if self.is_truthy(&cond) {
             self.visit_stmt(then_branch)?;
 
             Ok(())
@@ -77,6 +77,31 @@ impl StmtVisitor<()> for Interpreter {
 }
 
 impl ExprVisitor<LoxObj> for Interpreter {
+    fn visit_logical_expr(
+        &mut self,
+        left: &Expr,
+        operator: &LogicalOp,
+        right: &Expr,
+        _location: &SrcLocation,
+    ) -> Result<LoxObj, RutoxError> {
+        let left = self.visit_expr(left)?;
+
+        match operator {
+            LogicalOp::Or(_location) => {
+                if self.is_truthy(&left) {
+                    return Ok(left);
+                }
+            }
+            LogicalOp::And(_location) => {
+                if !self.is_truthy(&left) {
+                    return Ok(left);
+                }
+            }
+        }
+
+        self.visit_expr(right)
+    }
+
     fn visit_literal_expr(&self, literal: &LiteralData) -> Result<LoxObj, RutoxError> {
         Ok(literal.clone().into())
     }
@@ -90,7 +115,7 @@ impl ExprVisitor<LoxObj> for Interpreter {
             UnaryOp::Bang(location) => {
                 let value = self.visit_expr(&unary.expr)?;
 
-                Ok(LoxObj::Bool(!self.is_truthy(value), location.clone()))
+                Ok(LoxObj::Bool(!self.is_truthy(&value), location.clone()))
             }
             UnaryOp::Minus(location) => {
                 let value = self.visit_expr(&unary.expr)?;
@@ -285,7 +310,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn is_truthy(&self, obj: LoxObj) -> bool {
+    fn is_truthy(&self, obj: &LoxObj) -> bool {
         !matches!(obj, LoxObj::Bool(false, _) | LoxObj::Nil(_))
     }
 

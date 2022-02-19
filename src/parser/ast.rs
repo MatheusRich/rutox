@@ -18,6 +18,7 @@ pub enum Expr {
     Binary(BinaryData),
     Grouping(Box<Expr>, SrcLocation),
     Unary(UnaryData),
+    Logical(Box<Expr>, LogicalOp, Box<Expr>, SrcLocation),
     Literal(LiteralData),
     Variable(Token, SrcLocation),
     Assign(Token, Box<Expr>, SrcLocation),
@@ -32,6 +33,7 @@ impl Expr {
             Expr::Unary(unary) => unary.location.clone(),
             Expr::Variable(_token, location) => location.clone(),
             Expr::Assign(_token, _expr, location) => location.clone(),
+            Expr::Logical(_left, _op, _right, location) => location.clone(),
         }
     }
 }
@@ -71,6 +73,12 @@ pub struct UnaryData {
     pub operator: UnaryOp,
     pub expr: Box<Expr>,
     pub location: SrcLocation,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum LogicalOp {
+    Or(SrcLocation),
+    And(SrcLocation),
 }
 
 #[derive(Debug, PartialEq, Clone)]

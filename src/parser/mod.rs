@@ -5,7 +5,7 @@ use crate::scanner::{
     token::{Token, TokenKind},
     SrcLocation,
 };
-use ast::{BinaryData, Expr, LiteralData, Stmt, UnaryData, UnaryOp};
+use ast::{BinaryData, Expr, LiteralData, LogicalOp, Stmt, UnaryData, UnaryOp};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -145,7 +145,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, RutoxError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
 
         if self.match_any(&[TokenKind::Equal]) {
             let operator = self.previous();
@@ -164,6 +164,42 @@ impl Parser {
                     ))
                 }
             }
+        }
+
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, RutoxError> {
+        let mut expr = self.and()?;
+
+        while self.match_any(&[TokenKind::Or]) {
+            let operator = self.previous();
+            let right = self.and()?;
+
+            expr = Expr::Logical(
+                Box::new(expr),
+                LogicalOp::Or(operator.location.clone()),
+                Box::new(right),
+                operator.location,
+            );
+        }
+
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr, RutoxError> {
+        let mut expr = self.equality()?;
+
+        while self.match_any(&[TokenKind::And]) {
+            let operator = self.previous();
+            let right = self.equality()?;
+
+            expr = Expr::Logical(
+                Box::new(expr),
+                LogicalOp::And(operator.location.clone()),
+                Box::new(right),
+                operator.location,
+            );
         }
 
         Ok(expr)
