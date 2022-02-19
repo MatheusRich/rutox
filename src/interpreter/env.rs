@@ -3,12 +3,21 @@ use std::collections::HashMap;
 
 pub struct Env {
     values: HashMap<String, LoxObj>,
+    enclosing: Option<Box<Env>>,
 }
 
 impl Env {
-    pub fn new() -> Self {
+    pub fn new(enclosing: Option<Box<Env>>) -> Self {
         Self {
             values: HashMap::new(),
+            enclosing,
+        }
+    }
+
+    pub fn default() -> Self {
+        Self {
+            values: HashMap::new(),
+            enclosing: None,
         }
     }
 
@@ -17,7 +26,13 @@ impl Env {
     }
 
     pub fn get(&self, name: &str) -> Option<&LoxObj> {
-        self.values.get(name)
+        self.values.get(name).or_else(|| {
+            if let Some(enclosing) = &self.enclosing {
+                enclosing.get(name)
+            } else {
+                None
+            }
+        })
     }
 
     pub fn assign(&mut self, name: &str, value: LoxObj) -> Result<(), ()> {
@@ -25,6 +40,8 @@ impl Env {
             self.values.insert(name.to_string(), value);
 
             Ok(())
+        } else if let Some(enclosing) = &self.enclosing {
+            enclosing.assign(name, value)
         } else {
             Err(())
         }
