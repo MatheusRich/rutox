@@ -39,6 +39,7 @@ pub trait StmtVisitor<T> {
             Stmt::Var(name, initializer, location) => {
                 self.visit_var_stmt(name, initializer, location)
             }
+            Stmt::Block(stmts, location) => self.visit_block_stmt(stmts, location),
         }
     }
 
@@ -48,6 +49,11 @@ pub trait StmtVisitor<T> {
         &mut self,
         name: &Token,
         initializer: &Option<Expr>,
+        location: &SrcLocation,
+    ) -> Result<T, RutoxError>;
+    fn visit_block_stmt(
+        &mut self,
+        exprs: &[Stmt],
         location: &SrcLocation,
     ) -> Result<T, RutoxError>;
 }

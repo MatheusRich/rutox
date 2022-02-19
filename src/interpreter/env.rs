@@ -1,16 +1,17 @@
 use super::LoxObj;
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct Env {
     values: HashMap<String, LoxObj>,
     enclosing: Option<Box<Env>>,
 }
 
 impl Env {
-    pub fn new(enclosing: Option<Box<Env>>) -> Self {
+    pub fn new(enclosing: Box<Env>) -> Self {
         Self {
             values: HashMap::new(),
-            enclosing,
+            enclosing: Some(enclosing),
         }
     }
 
@@ -40,7 +41,7 @@ impl Env {
             self.values.insert(name.to_string(), value);
 
             Ok(())
-        } else if let Some(enclosing) = &self.enclosing {
+        } else if let Some(enclosing) = &mut self.enclosing {
             enclosing.assign(name, value)
         } else {
             Err(())

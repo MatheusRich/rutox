@@ -22,6 +22,14 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
+    fn visit_block_stmt(
+        &mut self,
+        stmts: &[Stmt],
+        _location: &SrcLocation,
+    ) -> Result<(), RutoxError> {
+        self.execute_block(stmts, Env::new(Box::new(self.env.clone())))
+    }
+
     fn visit_expr_stmt(&mut self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         self.visit_expr(expr)?;
 
@@ -223,13 +231,34 @@ impl ExprVisitor<LoxObj> for Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        Interpreter { env: Env::new() }
+        Interpreter {
+            env: Env::default(),
+        }
     }
 
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), RutoxError> {
         for stmt in stmts {
             self.visit_stmt(&stmt)?;
         }
+
+        Ok(())
+    }
+
+    fn execute_block(&mut self, stmts: &[Stmt], new_env: Env) -> Result<(), RutoxError> {
+        let old_env = self.env.clone();
+
+        self.env = new_env;
+
+        for stmt in stmts {
+            match self.visit_stmt(stmt) {
+                Ok(_) => (),
+                Err(e) => {
+                    self.env = old_env;
+                    return Err(e);
+                }
+            }
+        }
+        self.env = old_env;
 
         Ok(())
     }

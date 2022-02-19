@@ -83,8 +83,23 @@ impl Parser {
         if self.match_any(&[TokenKind::Print]) {
             return self.print_statement();
         }
+        if self.match_any(&[TokenKind::LBrace]) {
+            return Ok(Stmt::Block(self.block()?, self.previous_location()));
+        }
 
         self.expression_statement()
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, RutoxError> {
+        let mut stmts = vec![];
+
+        while !self.check(&TokenKind::RBrace) && !self.is_at_end() {
+            stmts.push(self.declaration()?);
+        }
+
+        self.expect(TokenKind::RBrace, "Expect `}` after block")?;
+
+        Ok(stmts)
     }
 
     fn print_statement(&mut self) -> Result<Stmt, RutoxError> {
@@ -125,7 +140,6 @@ impl Parser {
                     ))
                 }
             }
-
         }
 
         Ok(expr)

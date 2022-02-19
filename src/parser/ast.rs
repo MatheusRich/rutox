@@ -9,6 +9,7 @@ pub enum Stmt {
     Print(Expr, SrcLocation),
     Expr(Expr, SrcLocation),
     Var(Token, Option<Expr>, SrcLocation),
+    Block(Vec<Stmt>, SrcLocation),
 }
 
 #[derive(Debug, PartialEq, Clone)]
