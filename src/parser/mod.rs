@@ -66,12 +66,10 @@ impl Parser {
 
                     Ok(Stmt::Var(token.clone(), initializer, location))
                 }
-                _ => {
-                    Err(RutoxError::Syntax(
-                        format!("Expect variable name, got {token}"),
-                        self.previous_location(),
-                    ))
-                }
+                _ => Err(RutoxError::Syntax(
+                    format!("Expect variable name, got {token}"),
+                    self.previous_location(),
+                )),
             }
         } else {
             Err(RutoxError::Syntax(
@@ -100,11 +98,37 @@ impl Parser {
         let expr = self.expression()?;
         self.expect(TokenKind::Semicolon, "Expect `;` after expression")?;
 
-        Ok(Stmt::Expr(expr.clone(), expr.location().clone()))
+        Ok(Stmt::Expr(expr.clone(), expr.location()))
     }
 
     fn expression(&mut self) -> Result<Expr, RutoxError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr, RutoxError> {
+        let expr = self.equality()?;
+
+        if self.match_any(&[TokenKind::Equal]) {
+            let operator = self.previous();
+            let value = self.assignment()?;
+
+            match &expr {
+                Expr::Variable(name, _location) => {
+                    let location = operator.location;
+
+                    return Ok(Expr::Assign(name.clone(), Box::new(value), location));
+                }
+                _ => {
+                    return Err(RutoxError::Syntax(
+                        format!("Expect assignment target to be a variable, got {:?}", expr),
+                        expr.location(),
+                    ))
+                }
+            }
+
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr, RutoxError> {

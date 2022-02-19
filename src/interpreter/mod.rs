@@ -15,14 +15,14 @@ pub struct Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_print_stmt(&self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
+    fn visit_print_stmt(&mut self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         let value = self.visit_expr(expr)?;
         println!("{value}");
 
         Ok(())
     }
 
-    fn visit_expr_stmt(&self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
+    fn visit_expr_stmt(&mut self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         self.visit_expr(expr)?;
 
         Ok(())
@@ -51,16 +51,17 @@ impl ExprVisitor<LoxObj> for Interpreter {
         Ok(literal.clone().into())
     }
 
-    fn visit_grouping_expr(&self, expr: &Expr) -> Result<LoxObj, RutoxError> {
+    fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<LoxObj, RutoxError> {
         self.visit_expr(expr)
     }
 
-    fn visit_unary_expr(&self, unary: &UnaryData) -> Result<LoxObj, RutoxError> {
+    fn visit_unary_expr(&mut self, unary: &UnaryData) -> Result<LoxObj, RutoxError> {
         match &unary.operator {
-            UnaryOp::Bang(location) => Ok(LoxObj::Bool(
-                !self.is_truthy(self.visit_expr(&unary.expr)?),
-                location.clone(),
-            )),
+            UnaryOp::Bang(location) => {
+                let value = self.visit_expr(&unary.expr)?;
+
+                Ok(LoxObj::Bool(!self.is_truthy(value), location.clone()))
+            }
             UnaryOp::Minus(location) => {
                 let value = self.visit_expr(&unary.expr)?;
 
@@ -77,22 +78,20 @@ impl ExprVisitor<LoxObj> for Interpreter {
         }
     }
 
-    fn visit_binary_expr(&self, binary: &BinaryData) -> Result<LoxObj, RutoxError> {
+    fn visit_binary_expr(&mut self, binary: &BinaryData) -> Result<LoxObj, RutoxError> {
         match &binary.operator {
-            BinaryOp::EqualEqual(location) => Ok(LoxObj::Bool(
-                self.is_equal(
-                    self.visit_expr(&binary.left)?,
-                    self.visit_expr(&binary.right)?,
-                ),
-                location.clone(),
-            )),
-            BinaryOp::BangEqual(location) => Ok(LoxObj::Bool(
-                !self.is_equal(
-                    self.visit_expr(&binary.left)?,
-                    self.visit_expr(&binary.right)?,
-                ),
-                location.clone(),
-            )),
+            BinaryOp::EqualEqual(location) => {
+                let a = self.visit_expr(&binary.left)?;
+                let b = self.visit_expr(&binary.right)?;
+
+                Ok(LoxObj::Bool(self.is_equal(a, b), location.clone()))
+            }
+            BinaryOp::BangEqual(location) => {
+                let a = self.visit_expr(&binary.left)?;
+                let b = self.visit_expr(&binary.right)?;
+
+                Ok(LoxObj::Bool(!self.is_equal(a, b), location.clone()))
+            }
             BinaryOp::Greater(location)
             | BinaryOp::Less(location)
             | BinaryOp::GreaterEqual(location)
@@ -198,6 +197,23 @@ impl ExprVisitor<LoxObj> for Interpreter {
         match self.env.get(&name.lexeme) {
             Some(value) => Ok(value.clone()),
             None => Err(RutoxError::Runtime(
+                format!("Undefined variable `{}`", name.lexeme),
+                location.clone(),
+            )),
+        }
+    }
+
+    fn visit_assign_expr(
+        &mut self,
+        name: &Token,
+        value: Box<Expr>,
+        location: &SrcLocation,
+    ) -> Result<LoxObj, RutoxError> {
+        let value = self.visit_expr(&value)?;
+
+        match self.env.assign(&name.lexeme, value.clone()) {
+            Ok(_) => Ok(value),
+            Err(_) => Err(RutoxError::Runtime(
                 format!("Undefined variable `{}`", name.lexeme),
                 location.clone(),
             )),

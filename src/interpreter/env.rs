@@ -19,4 +19,14 @@ impl Env {
     pub fn get(&self, name: &str) -> Option<&LoxObj> {
         self.values.get(name)
     }
+
+    pub fn assign(&mut self, name: &str, value: LoxObj) -> Result<(), ()> {
+        if self.values.contains_key(name) {
+            self.values.insert(name.to_string(), value);
+
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
 }

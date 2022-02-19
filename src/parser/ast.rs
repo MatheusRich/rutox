@@ -18,6 +18,7 @@ pub enum Expr {
     Unary(UnaryData),
     Literal(LiteralData),
     Variable(Token, SrcLocation),
+    Assign(Token, Box<Expr>, SrcLocation),
 }
 
 impl Expr {
@@ -28,6 +29,7 @@ impl Expr {
             Expr::Literal(literal) => literal.location(),
             Expr::Unary(unary) => unary.location.clone(),
             Expr::Variable(_token, location) => location.clone(),
+            Expr::Assign(_token, _expr, location) => location.clone(),
         }
     }
 }
