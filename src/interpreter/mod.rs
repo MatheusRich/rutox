@@ -1,25 +1,46 @@
+mod env;
 mod lox_obj;
 use crate::parser::{
     ast::{BinaryData, BinaryOp, Expr, LiteralData, Stmt, UnaryData, UnaryOp},
     visitors::{ExprVisitor, StmtVisitor},
 };
 use crate::rutox_error::RutoxError;
-use core::panic;
+use crate::scanner::{token::Token, SrcLocation};
+pub use env::Env;
 pub use lox_obj::LoxObj;
 use std::cmp::Ordering;
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    env: Env,
+}
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_print_stmt(&self, expr: &Expr) -> Result<(), RutoxError> {
+    fn visit_print_stmt(&self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         let value = self.visit_expr(expr)?;
         println!("{value}");
 
         Ok(())
     }
 
-    fn visit_expr_stmt(&self, expr: &Expr) -> Result<(), RutoxError> {
+    fn visit_expr_stmt(&self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         self.visit_expr(expr)?;
+
+        Ok(())
+    }
+
+    fn visit_var_stmt(
+        &mut self,
+        name: &Token,
+        initializer: &Option<Expr>,
+        location: &SrcLocation,
+    ) -> Result<(), RutoxError> {
+        let mut value = LoxObj::Nil(location.clone());
+
+        if let Some(initial_val) = initializer {
+            value = self.visit_expr(initial_val)?;
+        }
+
+        self.env.define(&name.lexeme, value);
 
         Ok(())
     }
@@ -168,14 +189,28 @@ impl ExprVisitor<LoxObj> for Interpreter {
             }
         }
     }
+
+    fn visit_variable_expr(
+        &self,
+        name: &Token,
+        location: &SrcLocation,
+    ) -> Result<LoxObj, RutoxError> {
+        match self.env.get(&name.lexeme) {
+            Some(value) => Ok(value.clone()),
+            None => Err(RutoxError::Runtime(
+                format!("Undefined variable `{}`", name.lexeme),
+                location.clone(),
+            )),
+        }
+    }
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Interpreter {}
+        Interpreter { env: Env::new() }
     }
 
-    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<(), RutoxError> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), RutoxError> {
         for stmt in stmts {
             self.visit_stmt(&stmt)?;
         }

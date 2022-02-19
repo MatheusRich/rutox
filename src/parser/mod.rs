@@ -19,12 +19,66 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, RutoxError> {
         let mut stmts = vec![];
+        let mut errors = vec![];
 
         while !self.is_at_end() {
-            stmts.push(self.statement()?)
+            match self.declaration() {
+                Ok(stmt) => stmts.push(stmt),
+                Err(err) => {
+                    errors.push(err);
+                    self.synchronize();
+                }
+            }
         }
 
-        Ok(stmts)
+        if errors.is_empty() {
+            Ok(stmts)
+        } else {
+            Err(RutoxError::Multiple(errors))
+        }
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, RutoxError> {
+        if self.match_any(&[TokenKind::Var]) {
+            return self.var_declaration();
+        }
+
+        self.statement()
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, RutoxError> {
+        let var_keyword_location = self.previous_location();
+
+        if !self.is_at_end() {
+            let token = self.advance();
+
+            match &token.kind {
+                TokenKind::Identifier(_name) => {
+                    let mut location = var_keyword_location;
+                    let mut initializer = None;
+
+                    if self.match_any(&[TokenKind::Equal]) {
+                        location = self.previous_location();
+                        initializer = Some(self.expression()?);
+                    }
+
+                    self.expect(TokenKind::Semicolon, "Expect semicolon after declaration")?;
+
+                    Ok(Stmt::Var(token.clone(), initializer, location))
+                }
+                _ => {
+                    Err(RutoxError::Syntax(
+                        format!("Expect variable name, got {token}"),
+                        self.previous_location(),
+                    ))
+                }
+            }
+        } else {
+            Err(RutoxError::Syntax(
+                "Expect variable name, got EOF".to_string(),
+                self.previous_location(),
+            ))
+        }
     }
 
     fn statement(&mut self) -> Result<Stmt, RutoxError> {
@@ -39,14 +93,14 @@ impl Parser {
         let value = self.expression()?;
         self.expect(TokenKind::Semicolon, "Expect `;` after value")?;
 
-        Ok(Stmt::Print(value, self.previous().location))
+        Ok(Stmt::Print(value, self.previous_location()))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, RutoxError> {
         let expr = self.expression()?;
         self.expect(TokenKind::Semicolon, "Expect `;` after expression")?;
 
-        Ok(Stmt::Expr(expr, expr.location()))
+        Ok(Stmt::Expr(expr.clone(), expr.location().clone()))
     }
 
     fn expression(&mut self) -> Result<Expr, RutoxError> {
@@ -167,7 +221,8 @@ impl Parser {
                 token.location.clone(),
             ))),
             TokenKind::Nil => Ok(Expr::Literal(LiteralData::Nil(token.location.clone()))),
-            &TokenKind::LParen => {
+            TokenKind::Identifier(_) => Ok(Expr::Variable(token.clone(), token.location.clone())),
+            TokenKind::LParen => {
                 let expr = self.expression()?;
                 self.expect(TokenKind::RParen, "Expect `)` after expression")?;
 
@@ -231,7 +286,7 @@ impl Parser {
         if self.is_at_end() {
             Err(RutoxError::Syntax(
                 "Unexpected end of input".to_string(),
-                self.previous().location,
+                self.previous_location(),
             ))
         } else {
             self.advance();
@@ -269,7 +324,11 @@ impl Parser {
     fn current_location(&self) -> SrcLocation {
         match self.peek() {
             Some(token) => token.location.clone(),
-            None => self.previous().location,
+            None => self.previous_location(),
         }
+    }
+
+    fn previous_location(&self) -> SrcLocation {
+        self.previous().location
     }
 }

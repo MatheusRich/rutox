@@ -8,23 +8,26 @@ use crate::scanner::{
 pub enum Stmt {
     Print(Expr, SrcLocation),
     Expr(Expr, SrcLocation),
+    Var(Token, Option<Expr>, SrcLocation),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Binary(BinaryData),
     Grouping(Box<Expr>, SrcLocation),
     Unary(UnaryData),
     Literal(LiteralData),
+    Variable(Token, SrcLocation),
 }
 
 impl Expr {
     pub fn location(&self) -> SrcLocation {
         match self {
-            Expr::Binary(binary) => binary.location,
-            Expr::Grouping(expr, location) => location.clone(),
+            Expr::Binary(binary) => binary.location.clone(),
+            Expr::Grouping(_, location) => location.clone(),
             Expr::Literal(literal) => literal.location(),
-            Expr::Unary(unary) => unary.location,
+            Expr::Unary(unary) => unary.location.clone(),
+            Expr::Variable(_token, location) => location.clone(),
         }
     }
 }
@@ -59,14 +62,14 @@ impl LiteralData {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UnaryData {
     pub operator: UnaryOp,
     pub expr: Box<Expr>,
     pub location: SrcLocation,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UnaryOp {
     Bang(SrcLocation),
     Minus(SrcLocation),
@@ -81,7 +84,7 @@ impl std::fmt::Display for UnaryOp {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BinaryData {
     pub operator: BinaryOp,
     pub left: Box<Expr>,
@@ -89,7 +92,7 @@ pub struct BinaryData {
     pub location: SrcLocation,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BinaryOp {
     BangEqual(SrcLocation),
     EqualEqual(SrcLocation),

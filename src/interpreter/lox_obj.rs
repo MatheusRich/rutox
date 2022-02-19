@@ -1,6 +1,7 @@
 use crate::parser::ast::LiteralData;
 use crate::scanner::src_location::SrcLocation;
 
+// Why should lox objs have a location?
 #[derive(Clone, PartialEq)]
 pub enum LoxObj {
     String(String, SrcLocation),

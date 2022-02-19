@@ -5,6 +5,7 @@ pub enum RutoxError {
     Programmer(String, SrcLocation),
     Syntax(String, SrcLocation),
     Runtime(String, SrcLocation),
+    Multiple(Vec<RutoxError>),
 }
 
 impl std::fmt::Display for RutoxError {
@@ -31,6 +32,15 @@ impl std::fmt::Display for RutoxError {
 
                 write!(f, "{}", msg)
             }
+            RutoxError::Multiple(errors) => {
+                let mut error_string = String::new();
+
+                for error in errors {
+                    error_string.push_str(&format!("{}\n", error));
+                }
+
+                write!(f, "{}", error_string)
+            }
         }
     }
 }
@@ -41,6 +51,11 @@ impl RutoxError {
             RutoxError::Syntax(_, location) => location.clone(),
             RutoxError::Programmer(_, location) => location.clone(),
             RutoxError::Runtime(_, location) => location.clone(),
+            RutoxError::Multiple(errors) => errors
+                .first()
+                .expect("There should be at least one error")
+                .location()
+                .clone(),
         }
     }
 

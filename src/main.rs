@@ -4,7 +4,7 @@ mod interpreter;
 mod parser;
 mod rutox_error;
 mod scanner;
-use interpreter::{Interpreter, LoxObj};
+use interpreter::Interpreter;
 use parser::Parser;
 use scanner::Scanner;
 
