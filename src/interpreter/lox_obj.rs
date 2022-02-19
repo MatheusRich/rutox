@@ -24,7 +24,7 @@ impl From<LiteralData> for LoxObj {
 impl std::fmt::Display for LoxObj {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            LoxObj::String(s, _) => write!(f, "\"{s}\""),
+            LoxObj::String(s, _) => write!(f, "{s}"),
             LoxObj::Number(n, _) => write!(f, "{n}"),
             LoxObj::Bool(bool, _) => write!(f, "{bool}"),
             LoxObj::Nil(_) => write!(f, "nil"),
