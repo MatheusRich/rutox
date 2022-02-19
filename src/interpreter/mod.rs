@@ -15,6 +15,28 @@ pub struct Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
+    fn visit_if_stmt(
+        &mut self,
+        cond: &Expr,
+        then_branch: &Box<Stmt>,
+        else_branch: &Option<Box<Stmt>>,
+        _location: &SrcLocation,
+    ) -> Result<(), RutoxError> {
+        let cond = self.visit_expr(cond)?;
+
+        if self.is_truthy(cond) {
+            self.visit_stmt(then_branch)?;
+
+            Ok(())
+        } else if let Some(else_branch) = else_branch {
+            self.visit_stmt(else_branch)?;
+
+            Ok(())
+        } else {
+            Ok(())
+        }
+    }
+
     fn visit_print_stmt(&mut self, expr: &Expr, _location: &SrcLocation) -> Result<(), RutoxError> {
         let value = self.visit_expr(expr)?;
         println!("{value}");

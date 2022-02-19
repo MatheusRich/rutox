@@ -40,6 +40,9 @@ pub trait StmtVisitor<T> {
                 self.visit_var_stmt(name, initializer, location)
             }
             Stmt::Block(stmts, location) => self.visit_block_stmt(stmts, location),
+            Stmt::If(cond, then_branch, else_branch, location) => {
+                self.visit_if_stmt(cond, then_branch, else_branch, location)
+            }
         }
     }
 
@@ -54,6 +57,13 @@ pub trait StmtVisitor<T> {
     fn visit_block_stmt(
         &mut self,
         exprs: &[Stmt],
+        location: &SrcLocation,
+    ) -> Result<T, RutoxError>;
+    fn visit_if_stmt(
+        &mut self,
+        cond: &Expr,
+        then_branch: &Box<Stmt>,
+        else_branch: &Option<Box<Stmt>>,
         location: &SrcLocation,
     ) -> Result<T, RutoxError>;
 }

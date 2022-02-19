@@ -10,6 +10,7 @@ pub enum Stmt {
     Expr(Expr, SrcLocation),
     Var(Token, Option<Expr>, SrcLocation),
     Block(Vec<Stmt>, SrcLocation),
+    If(Expr, Box<Stmt>, Option<Box<Stmt>>, SrcLocation),
 }
 
 #[derive(Debug, PartialEq, Clone)]

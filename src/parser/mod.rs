@@ -80,6 +80,9 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<Stmt, RutoxError> {
+        if self.match_any(&[TokenKind::If]) {
+            return self.if_statement();
+        }
         if self.match_any(&[TokenKind::Print]) {
             return self.print_statement();
         }
@@ -88,6 +91,27 @@ impl Parser {
         }
 
         self.expression_statement()
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, RutoxError> {
+        let if_keyword_location = self.previous_location();
+        self.expect(TokenKind::LParen, "Expect `(` after `if`")?;
+        let condition = self.expression()?;
+        self.expect(TokenKind::RParen, "Expect `)` after if condition")?;
+
+        let then = self.statement()?;
+        let else_branch = if self.match_any(&[TokenKind::Else]) {
+            Some(Box::new(self.statement()?))
+        } else {
+            None
+        };
+
+        Ok(Stmt::If(
+            condition,
+            Box::new(then),
+            else_branch,
+            if_keyword_location,
+        ))
     }
 
     fn block(&mut self) -> Result<Vec<Stmt>, RutoxError> {
@@ -104,7 +128,7 @@ impl Parser {
 
     fn print_statement(&mut self) -> Result<Stmt, RutoxError> {
         let value = self.expression()?;
-        self.expect(TokenKind::Semicolon, "Expect `;` after value")?;
+        self.expect(TokenKind::Semicolon, "Expect `;` after print value")?;
 
         Ok(Stmt::Print(value, self.previous_location()))
     }
